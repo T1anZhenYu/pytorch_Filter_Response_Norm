@@ -362,12 +362,14 @@ def adjust_learning_rate(optimizer, epoch):
     global state
     lr_min = args.lr_max
     lr_max = args.lr_min
+    print("ramp up is ",args.ramp_up)
     if epoch <= args.ramp_up:
         lr = lr_min + 0.5*(lr_max - lr_min)*(1 - math.cos(epoch/args.ramp_up*math.pi))
     else:
         lr = lr_min + 0.5*(lr_max - lr_min)*\
              (1 + math.cos((epoch - args.ramp_up)/(args.epochs - args.ramp_up)*math.pi))
     state['lr'] = lr
+    print('lr is ',lr)
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
 if __name__ == '__main__':
