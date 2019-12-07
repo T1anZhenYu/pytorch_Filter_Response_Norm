@@ -15,5 +15,5 @@ reproduce FRN on resnet_20/cifar_10
 
 | Layer type |accuracy |
 | ------ | ------ | 
-| batch_norm | 92.5% | 
+| batch_norm | 93.01% | 
 | FRN | 92.5% | 
