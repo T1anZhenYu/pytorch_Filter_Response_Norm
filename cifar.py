@@ -42,10 +42,10 @@ parser.add_argument('--train-batch', default=128, type=int, metavar='N',
                     help='train batchsize')
 parser.add_argument('--test-batch', default=100, type=int, metavar='N',
                     help='test batchsize')
-parser.add_argument('--lr_max', '--learning-rate', default=0.1, type=float,
-                    metavar='LR', help='initial learning rate')
-parser.add_argument('--lr_min', '--learning-rate', default=0.0001, type=float,
-                    metavar='LR', help='initial learning rate')
+parser.add_argument('--lr_max', default=0.1, type=float,
+                    help='maximum lr')
+parser.add_argument('--lr_min', default=0.0001, type=float,
+                    help='minimum lr')
 parser.add_argument('--drop', '--dropout', default=0, type=float,
                     metavar='Dropout', help='Dropout ratio')
 parser.add_argument('--schedule', type=int, nargs='+', default=[150, 225],
