@@ -363,6 +363,7 @@ def adjust_learning_rate(optimizer, epoch):
     lr_min = args.lr_max
     lr_max = args.lr_min
     print("ramp up is ",args.ramp_up)
+    print("epoch is ", epoch)
     if epoch <= args.ramp_up:
         lr = lr_min + 0.5*(lr_max - lr_min)*(1 - math.cos(epoch/args.ramp_up*math.pi))
     else:
