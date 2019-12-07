@@ -42,7 +42,9 @@ parser.add_argument('--train-batch', default=128, type=int, metavar='N',
                     help='train batchsize')
 parser.add_argument('--test-batch', default=100, type=int, metavar='N',
                     help='test batchsize')
-parser.add_argument('--lr', '--learning-rate', default=0.1, type=float,
+parser.add_argument('--lr_max', '--learning-rate', default=0.1, type=float,
+                    metavar='LR', help='initial learning rate')
+parser.add_argument('--lr_min', '--learning-rate', default=0.0001, type=float,
                     metavar='LR', help='initial learning rate')
 parser.add_argument('--drop', '--dropout', default=0, type=float,
                     metavar='Dropout', help='Dropout ratio')
@@ -358,11 +360,14 @@ def save_checkpoint(state, is_best, checkpoint='checkpoint', filename='checkpoin
 #             param_group['lr'] = state['lr']
 def adjust_learning_rate(optimizer, epoch):
     global state
-    lr_min = 0.00001
-    lr_max = 0.1
-    if epoch <=50:
-        lr = math.sin(epoch/50)
-    lr = lr_min + 0.5*(lr_max - lr_min)*(1 + math.sin(epoch/args.epochs*1.5*math.pi))
+    lr_min = args.lr_max
+    lr_max = args.lr_min
+    if epoch <= args.ramp_up:
+        lr = lr_min + 0.5*(lr_max - lr_min)*(1 + math.sin(epoch/args.ramp_up*0.5*math.pi))
+        state['lr'] = lr
+    else:
+        lr = lr_min + 0.5*(lr_max - lr_min)*\
+             (1 + math.cos((epoch - args.ramp_up)/args.epochs*math.pi))
     state['lr'] = lr
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
