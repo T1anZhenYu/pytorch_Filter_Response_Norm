@@ -380,6 +380,8 @@ def adjust_learning_rate(optimizer, epoch):
     else :
         lr = lr_min + 0.5*(lr_max - lr_min)*\
              (1 + math.cos((epoch - args.ramp_up)/(args.epochs - args.ramp_up)*math.pi))
+    if lr <0.0001:
+        lr = 0.0001
     state['lr'] = lr
 
     for param_group in optimizer.param_groups:
