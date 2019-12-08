@@ -38,7 +38,7 @@ parser.add_argument('--epochs', default=300, type=int, metavar='N',
                     help='number of total epochs to run')
 parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                     help='manual epoch number (useful on restarts)')
-parser.add_argument('--train-batch', default=128, type=int, metavar='N',
+parser.add_argument('--train-batch', default=32, type=int, metavar='N',
                     help='train batchsize')
 parser.add_argument('--test-batch', default=100, type=int, metavar='N',
                     help='test batchsize')
@@ -82,6 +82,7 @@ parser.add_argument('--gpu-id', default='0', type=str,
                     help='id(s) for CUDA_VISIBLE_DEVICES')
 parser.add_argument('--ramp-up', default=50, type=int,
                     help='ramp-up epochs')
+parser.add_argument('--cos',default=False,type=bool,help='using cosine decay schedule?')
 args = parser.parse_args()
 state = {k: v for k, v in args._get_kwargs()}
 
@@ -374,17 +375,23 @@ def adjust_learning_rate(optimizer, epoch):
     global state
     lr_min = args.lr_min
     lr_max = args.lr_max
+    if args.cos:
+        if epoch <= args.ramp_up:
+            lr = lr_min + 0.5*(lr_max - lr_min)*(1 - math.cos(epoch/args.ramp_up*math.pi))
+        else :
+            lr = lr_min + 0.5*(lr_max - lr_min)*\
+                 (1 + math.cos((epoch - args.ramp_up)/(args.epochs - args.ramp_up)*math.pi))
+        if lr <0.0001:
+            lr = 0.0001
+        state['lr'] = lr
 
-    if epoch <= args.ramp_up:
-        lr = lr_min + 0.5*(lr_max - lr_min)*(1 - math.cos(epoch/args.ramp_up*math.pi))
-    else :
-        lr = lr_min + 0.5*(lr_max - lr_min)*\
-             (1 + math.cos((epoch - args.ramp_up)/(args.epochs - args.ramp_up)*math.pi))
-    if lr <0.0001:
-        lr = 0.0001
-    state['lr'] = lr
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = lr
+    else:
+        if epoch in args.schedule:
+            state['lr'] *= args.gamma
+            for param_group in optimizer.param_groups:
+                param_group['lr'] = state['lr']
 
-    for param_group in optimizer.param_groups:
-        param_group['lr'] = lr
 if __name__ == '__main__':
     main()
