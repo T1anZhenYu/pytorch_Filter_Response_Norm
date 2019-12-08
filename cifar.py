@@ -173,7 +173,7 @@ def main():
         best_acc = checkpoint['best_acc']
         start_epoch = checkpoint['epoch']
         model.load_state_dict(checkpoint['state_dict'])
-        print(model.state_dict().keys())
+
         optimizer.load_state_dict(checkpoint['optimizer'])
         logger = Logger(os.path.join(args.checkpoint, 'log.txt'), title=title, resume=True)
     else:
@@ -371,8 +371,8 @@ def adjust_learning_rate(optimizer, epoch):
             state['lr'] = args.lr_max
         if epoch in args.schedule:
             state['lr'] *= args.gamma
-            for param_group in optimizer.param_groups:
-                param_group['lr'] = state['lr']
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = state['lr']
 
 if __name__ == '__main__':
     main()
