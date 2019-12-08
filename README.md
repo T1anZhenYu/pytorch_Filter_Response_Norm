@@ -16,6 +16,6 @@ In paper, 32 images per gpu is the biggest batch size. So the reproduce matches 
 
 | images per gpu|128 |32|
 | ------ | ------ |------ | 
-| batch_norm | 93.01% |91.3%|
+| batch_norm | 93.01% |91.2%|
 | FRN | 92.3% | 92.3%|
 
