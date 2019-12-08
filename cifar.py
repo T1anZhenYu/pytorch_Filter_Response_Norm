@@ -82,7 +82,7 @@ parser.add_argument('--gpu-id', default='0', type=str,
                     help='id(s) for CUDA_VISIBLE_DEVICES')
 parser.add_argument('--ramp-up', default=50, type=int,
                     help='ramp-up epochs')
-parser.add_argument('--cos',default=False,type=bool,help='using cosine decay schedule?')
+parser.add_argument('--cos', default=False, type=bool,help='using cosine decay schedule?')
 args = parser.parse_args()
 state = {k: v for k, v in args._get_kwargs()}
 
@@ -388,6 +388,9 @@ def adjust_learning_rate(optimizer, epoch):
         for param_group in optimizer.param_groups:
             param_group['lr'] = lr
     else:
+        print('in linear decay')
+        if epoch == 0:
+            state['lr'] = args.lr_max
         if epoch in args.schedule:
             state['lr'] *= args.gamma
             for param_group in optimizer.param_groups:
