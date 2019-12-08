@@ -12,8 +12,8 @@ BN:
 reproduce FRN on resnet_20/cifar_10
 
 ### result
+| images per gpu|128 |32|
+| ------ | ------ |------ | 
+| batch_norm | 93.01% |91.3%|
+| FRN | 92.3% | 92.3%|
 
-| Layer type |accuracy |
-| ------ | ------ | 
-| batch_norm | 93.01% | 
-| FRN | 92.5% | 
