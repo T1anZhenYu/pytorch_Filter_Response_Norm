@@ -230,6 +230,15 @@ def main():
                 'best_acc': best_acc,
                 'optimizer' : optimizer.state_dict(),
             }, is_best, checkpoint=args.checkpoint)
+        if epoch == args.ramp_up:
+            save_checkpoint({
+                'epoch': epoch + 1,
+                'state_dict': model.state_dict(),
+                'acc': test_acc,
+                'best_acc': best_acc,
+                'optimizer': optimizer.state_dict(),
+            }, is_best, checkpoint=args.checkpoint)
+
 
     logger.close()
     logger.plot()
@@ -349,8 +358,11 @@ def test(testloader, model, criterion, epoch, use_cuda):
 def save_checkpoint(state, is_best, checkpoint='checkpoint', filename='checkpoint.pth.tar'):
     filepath = os.path.join(checkpoint, filename)
     torch.save(state, filepath)
-    if is_best:
+    if is_best == 1:
         shutil.copyfile(filepath, os.path.join(checkpoint, 'model_best.pth.tar'))
+    if is_best == 2:
+        shutil.copyfile(filepath, os.path.join(checkpoint, 'ramp_up.pth.tar'))
+
 
 # def adjust_learning_rate(optimizer, epoch):
 #     global state
