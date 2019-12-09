@@ -11,7 +11,7 @@ import torch.nn as nn
 import math
 from ..layers import MaxMinFRN
 
-__all__ = ['resnet_frn']
+__all__ = ['resnet_max_min_frn']
 
 def conv3x3(in_planes, out_planes, stride=1):
     "3x3 convolution with padding"
@@ -101,10 +101,10 @@ class Bottleneck(nn.Module):
         return out
 
 
-class ResNet_Frn(nn.Module):
+class ResNet_Max_Min_Frn(nn.Module):
 
     def __init__(self, depth, num_classes=1000, block_name='BasicBlock'):
-        super(ResNet_Frn, self).__init__()
+        super(ResNet_Max_Min_Frn, self).__init__()
         # Model type specifies number of layers for CIFAR-10 model
         if block_name.lower() == 'basicblock':
             assert (depth - 2) % 6 == 0, 'When use basicblock, depth should be 6n+2, e.g. 20, 32, 44, 56, 110, 1202'
@@ -175,8 +175,8 @@ class ResNet_Frn(nn.Module):
         return x
 
 
-def resnet_frn(**kwargs):
+def resnet_max_min_frn(**kwargs):
     """
     Constructs a ResNet model.
     """
-    return ResNet_Frn(**kwargs)
+    return ResNet_Max_Min_Frn(**kwargs)
