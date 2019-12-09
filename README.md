@@ -12,8 +12,10 @@ BN:
 reproduce FRN on resnet_20/cifar_10
 
 ### result
+In paper, 32 images per gpu is the biggest batch size. So the reproduction matches paper's conclusion.
 
-| Layer type |accuracy |
-| ------ | ------ | 
-| batch_norm | 93.01% | 
-| FRN | 92.5% | 
+| images per gpu|128 |32|
+| ------ | ------ |------ | 
+| batch_norm | 93.01% |91.2%|
+| FRN | 92.3% | 92.3%|
+
