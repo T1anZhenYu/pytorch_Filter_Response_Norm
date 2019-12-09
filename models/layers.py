@@ -103,7 +103,7 @@ class MaxMinFRN(nn.Module):
         channel_max = torch.max(torch.max(x,dim=2,keepdim=True)[0],dim=2,keepdim=True)[0]
         channel_min = torch.min(torch.min(x,dim=2,keepdim=True)[0],dim=2,keepdim=True)[0]
 
-        Cn = torch.log(h * w) * 2
+        Cn = torch.log(torch.tensor(h * w)) * 2
         nu2 = (channel_max - channel_min).pow(2)/Cn
 
         # Perform FRN
