@@ -2,11 +2,11 @@
 ### usage
 FRN:
 
-`python cifar.py --arch resnet_frn --depth 20`
+`python cifar.py --arch resnet_frn --depth 20 --epoch 400 --cos`
 
-BN:
+BN:(for one GPU)
 
-`python cifar.py --arch resnet --depth 20`
+`python cifar.py --arch resnet --depth 20 --epoch 400 train-batch 32`
 
 
 reproduce FRN on resnet_20/cifar_10
