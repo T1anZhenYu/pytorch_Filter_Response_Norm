@@ -116,6 +116,8 @@ class ResNet_Frn(nn.Module):
         #     block = Bottleneck
         # else:
         #     raise ValueError('block_name shoule be Basicblock or Bottleneck')
+        assert (depth - 2) % 6 == 0, 'When use basicblock, depth should be 6n+2, e.g. 20, 32, 44, 56, 110, 1202'
+        n = (depth - 2) // 6
         block = BasicBlock
 
         self.inplanes = 16
