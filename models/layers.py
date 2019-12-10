@@ -100,8 +100,8 @@ class MaxMinFRN(nn.Module):
         assert (self.gamma.shape[1], self.beta.shape[1], self.tau.shape[1]) == (c, c, c)
 
         # Compute the max of activations per channel
-        channel_max = torch.max(torch.max(x,dim=2,keepdim=True)[0],dim=2,keepdim=True)[0]
-        channel_min = torch.min(torch.min(x,dim=2,keepdim=True)[0],dim=2,keepdim=True)[0]
+        channel_max = torch.max(torch.max(x,dim=2,keepdim=True)[0],dim=3,keepdim=True)[0]
+        channel_min = torch.min(torch.min(x,dim=2,keepdim=True)[0],dim=3,keepdim=True)[0]
 
         Cn = torch.log(torch.tensor(h * w + 0.000001)) * 2
         nu2 = (channel_max - channel_min).pow(2)/Cn
