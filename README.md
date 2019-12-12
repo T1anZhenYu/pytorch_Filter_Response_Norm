@@ -2,7 +2,7 @@
 ### usage
 FRN:
 
-`python cifar.py --arch resnet_frn --depth 20 --epoch 400 --cos true --train-batch 32`
+`python cifar.py --arch resnet_frn --depth 20 --epoch 400 --cos true --train-batch 32 --ramp-up 50`
 
 BN:(for one GPU)
 
