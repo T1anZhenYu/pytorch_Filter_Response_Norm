@@ -103,7 +103,7 @@ class CenterFRN(nn.Module):
         # Perform FRN
         x = x * torch.rsqrt(nu2 + 1e-6 + torch.abs(self.eps))
         # Return after applying the Offset-ReLU non-linearity
-        return self.gamma*x + self.beta - self.tau
+        return torch.max(self.gamma*x + self.beta, self.tau) - self.tau
 
 class MaxMinFRN(nn.Module):
     def __init__(self, num_features, eps=1e-6):
