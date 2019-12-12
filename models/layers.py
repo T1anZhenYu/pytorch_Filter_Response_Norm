@@ -142,8 +142,9 @@ class MaxMinFRN(nn.Module):
         channel_min = torch.min(torch.min(x,dim=2,keepdim=True)[0],dim=3,keepdim=True)[0]
 
         Cn = torch.log(torch.tensor(h * w + 0.000001)) * 2
-        nu2 = (channel_max - channel_min).pow(2)/Cn
-
+        sigma = (channel_max - channel_min).pow(2)/Cn
+        mu = (channel_min + channel_max).pow(2)/4
+        nu2 = sigma + mu
         # Perform FRN
         x = x * torch.rsqrt(nu2 + 1e-6 + torch.abs(self.eps))
         # Return after applying the Offset-ReLU non-linearity
