@@ -363,7 +363,7 @@ def save_checkpoint(state, is_best, checkpoint='checkpoint', filename='checkpoin
 #             param_group['lr'] = state['lr']
 def adjust_learning_rate(optimizer, epoch):
     global state
-    lr_min = 0
+    lr_min = args.lr_min
     lr_max = 0.1 * args.train_batch / 256
     if args.cos:
         if epoch <= args.ramp_up:
