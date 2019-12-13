@@ -1,12 +1,18 @@
 # pytorch_Filter_Response_Norm
 ### usage
+BN:(for one GPU)
+
+`python cifar.py --arch resnet --depth 20 --epoch 400 --train-batch 32`
+
 FRN:
 
 `python cifar.py --arch resnet_frn --depth 20 --epoch 400 --cos true --train-batch 32 --ramp-up 50`
 
-BN:(for one GPU)
+Max_Min_FRN:
 
-`python cifar.py --arch resnet --depth 20 --epoch 400 --train-batch 32`
+`python cifar.py --arch resnet_max_min_frn --depth 20 --epoch 400 --cos true --train-batch 32 --ramp-up 50`
+
+
 
 
 reproduce FRN on resnet_20/cifar_10
