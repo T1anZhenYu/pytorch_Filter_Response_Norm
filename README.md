@@ -25,3 +25,5 @@ In paper, 32 images per gpu is the biggest batch size. So the reproduction match
 | batch_norm | 93.01% |91.2%|
 | FRN | 92.3% | 92.3%|
 
+![](http://latex.codecogs.com/gif.latex?\\frac{1}{1+sin(x)})
+
