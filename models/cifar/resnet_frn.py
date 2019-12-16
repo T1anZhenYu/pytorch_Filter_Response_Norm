@@ -118,7 +118,7 @@ class ResNet_Frn(nn.Module):
         x = self.conv1(x)
         # x = self.bn1(x)
         # x = self.relu(x)    # 32x32
-        x = self.frn1(x)
+        x = self.frn1(x, self.iter)
         # x = self.tlu1(x)
 
         x = self.layer1(x)  # 32x32
@@ -128,6 +128,7 @@ class ResNet_Frn(nn.Module):
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
         x = self.fc(x)
+        self.iter += 1
 
         return x
 
