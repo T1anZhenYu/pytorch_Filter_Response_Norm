@@ -65,11 +65,11 @@ class FilterResponseNormalization(nn.Module):
         # Perform FRN
         x = x * torch.rsqrt(nu2 + 1e-6 + torch.abs(self.eps))
         # Return after applying the Offset-ReLU non-linearity
-        print('iter:',iter)
+        # print('iter:',iter)
         if iter % 300 == 1:
             c = {}
-            c['tau'] = np.array(self.tau.detach())
-            c['befor_max'] = np.array(x.detach())
+            c['tau'] = np.array(self.tau.detach().cpu())
+            c['befor_max'] = np.array(x.detach().cpu())
             fname = os.path.join('checkpoint',str(iter)+".npz")
             np.savez(fname,**c)
             print('in dump')
