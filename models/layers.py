@@ -71,7 +71,7 @@ class FilterResponseNormalization(nn.Module):
             c['befor_max'] = np.array(x.detach())
             fname = os.path.join('checkpoint',str(iter)+".npz")
             np.savez(fname,**c)
-            print()
+            print('in dump')
             c = {}
         return torch.max(self.gamma*x + self.beta, self.tau)
 
