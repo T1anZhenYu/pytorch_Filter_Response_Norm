@@ -65,6 +65,7 @@ class FilterResponseNormalization(nn.Module):
         # Perform FRN
         x = x * torch.rsqrt(nu2 + 1e-6 + torch.abs(self.eps))
         # Return after applying the Offset-ReLU non-linearity
+        print('iter:',iter)
         if iter % 300 == 1:
             c = {}
             c['tau'] = np.array(self.tau.detach())
