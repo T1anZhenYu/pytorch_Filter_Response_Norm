@@ -3,7 +3,7 @@ import torch.nn as nn
 from torch.nn.parameter import Parameter
 from torch.nn import functional as F
 import numpy as np
-
+import os
 
 class Conv2d(nn.Conv2d):
 
@@ -50,7 +50,7 @@ class FilterResponseNormalization(nn.Module):
         nn.init.ones_(self.gamma)
         nn.init.zeros_(self.beta)
         nn.init.zeros_(self.tau)
-    def forward(self, x, iter = 1):
+    def forward(self, x, iter = 0):
         """
         Input Variables:
         ----------------
@@ -65,12 +65,13 @@ class FilterResponseNormalization(nn.Module):
         # Perform FRN
         x = x * torch.rsqrt(nu2 + 1e-6 + torch.abs(self.eps))
         # Return after applying the Offset-ReLU non-linearity
-        if iter % 300 == 0:
+        if iter % 300 == 1:
             c = {}
             c['tau'] = np.array(self.tau.detach())
             c['befor_max'] = np.array(x.detach())
-            fname = "./dump/"+str(iter) + ".npz"
+            fname = os.path.join('checkpoint',str(iter)+".npz")
             np.savez(fname,**c)
+            print()
             c = {}
         return torch.max(self.gamma*x + self.beta, self.tau)
 
