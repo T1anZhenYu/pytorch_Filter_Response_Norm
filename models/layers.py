@@ -70,7 +70,7 @@ class FilterResponseNormalization(nn.Module):
             c = {}
             c['tau'] = np.array(self.tau.detach().cpu())
             c['befor_max'] = np.array(x.detach().cpu())
-            fname = os.path.join('checkpoint',str(iter)+".npz")
+            fname = os.path.join('checkpoint',str(100000000+iter)+".npz")
             np.savez(fname,**c)
             # print('in dump')
             c = {}
