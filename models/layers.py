@@ -65,7 +65,9 @@ class FilterResponseNormalization(nn.Module):
                 self.beta.shape[1], self.tau.shape[1]) == (c, c, c, c)
 
         x = torch.min(x, self.alpha)
-        return torch.max(self.gamma*x + self.beta, self.tau)
+        x = torch.max(self.gamma*x + self.beta, self.tau)
+        x = x /(self.alpha - self.tau)
+        return x
 
 class MaxMinFRN(nn.Module):
     def __init__(self, num_features, eps=1e-6):
