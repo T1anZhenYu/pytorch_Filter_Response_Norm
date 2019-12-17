@@ -27,12 +27,12 @@ class Conv2d(nn.Conv2d):
 def BatchNorm2d(num_features):
     return nn.GroupNorm(num_channels=num_features, num_groups=32)
 
-class MyMax(torch.autograd.Function):
+class MyMin(torch.autograd.Function):
     @staticmethod
     def forward(self, x, tau):
 
         self.save_for_backward(x, tau)
-        output = torch.max(x, tau)
+        output = torch.min(x, tau)
         return output
 
     @staticmethod
@@ -40,18 +40,10 @@ class MyMax(torch.autograd.Function):
 
         x, tau = self.saved_tensors
         dl_dx = grad_output.clone()
-        dl_dx[x < tau] = 0
 
         dl_dtau = grad_output.clone()
-        # x_max = torch.max(torch.max(torch.max(x,dim=0,keepdim=True)[0],
-        #                             dim=2,keepdim=True)[0],dim=3,keepdim=True)[0]
-        # x_min = torch.min(torch.min(torch.min(x,dim=0,keepdim=True)[0],
-        #                             dim=2,keepdim=True)[0],dim=3,keepdim=True)[0]
-        # mu = (x_max + x_min)/2
-        # mu = x.mean([0,2,3],keepdim=True)
-        # dl_dtau = dl_dtau*(x < tau).float() + (x > tau).float() * (mu - tau)
-        # print(dl_dtau.shape)
-        # dl_dtau[x > tau] = 0
+
+        dl_dtau[x < tau] = 0
         # dl_dtau = dl_dtau.mean([0, 2, 3], keepdim=True)
         return dl_dx, dl_dtau
 class FilterResponseNormalization(nn.Module):
@@ -73,6 +65,7 @@ class FilterResponseNormalization(nn.Module):
         self.alpha = nn.parameter.Parameter(
              torch.Tensor(1, num_features, 1, 1), requires_grad=True)
         self.eps = nn.parameter.Parameter(torch.Tensor([eps]),requires_grad=False)
+        self.min = MyMin.apply
         self.reset_parameters()
     def reset_parameters(self):
         nn.init.ones_(self.gamma)
@@ -90,9 +83,8 @@ class FilterResponseNormalization(nn.Module):
         assert (self.gamma.shape[1], self.alpha.shape[1],
                 self.beta.shape[1], self.tau.shape[1]) == (c, c, c, c)
 
-        x = torch.min(x, self.alpha)
+        x = self.min(x, self.alpha)
         x = torch.max(self.gamma*x + self.beta, self.tau)
-        x = x /(self.alpha - self.tau).detach()
         return x
 
 class MaxMinFRN(nn.Module):
