@@ -27,7 +27,33 @@ class Conv2d(nn.Conv2d):
 def BatchNorm2d(num_features):
     return nn.GroupNorm(num_channels=num_features, num_groups=32)
 
+class MyMax(torch.autograd.Function):
+    @staticmethod
+    def forward(self, x, tau):
 
+        self.save_for_backward(x, tau)
+        output = torch.max(x, tau)
+        return output
+
+    @staticmethod
+    def backward(self, grad_output):
+
+        x, tau = self.saved_tensors
+        dl_dx = grad_output.clone()
+        dl_dx[x < tau] = 0
+
+        dl_dtau = grad_output.clone()
+        # x_max = torch.max(torch.max(torch.max(x,dim=0,keepdim=True)[0],
+        #                             dim=2,keepdim=True)[0],dim=3,keepdim=True)[0]
+        # x_min = torch.min(torch.min(torch.min(x,dim=0,keepdim=True)[0],
+        #                             dim=2,keepdim=True)[0],dim=3,keepdim=True)[0]
+        # mu = (x_max + x_min)/2
+        # mu = x.mean([0,2,3],keepdim=True)
+        # dl_dtau = dl_dtau*(x < tau).float() + (x > tau).float() * (mu - tau)
+        # print(dl_dtau.shape)
+        # dl_dtau[x > tau] = 0
+        # dl_dtau = dl_dtau.mean([0, 2, 3], keepdim=True)
+        return dl_dx, dl_dtau
 class FilterResponseNormalization(nn.Module):
     def __init__(self, num_features, eps=1e-6):
         """
