@@ -44,10 +44,13 @@ class FilterResponseNormalization(nn.Module):
              torch.Tensor(1, num_features, 1, 1), requires_grad=True)
         self.tau = nn.parameter.Parameter(
              torch.Tensor(1, num_features, 1, 1), requires_grad=True)
+        self.alpha = nn.parameter.Parameter(
+             torch.Tensor(1, num_features, 1, 1), requires_grad=True)
         self.eps = nn.parameter.Parameter(torch.Tensor([eps]),requires_grad=False)
         self.reset_parameters()
     def reset_parameters(self):
         nn.init.ones_(self.gamma)
+        nn.init.ones_(self.alpha)
         nn.init.zeros_(self.beta)
         nn.init.zeros_(self.tau)
     def forward(self, x, iter = 0):
@@ -58,22 +61,11 @@ class FilterResponseNormalization(nn.Module):
         """
 
         n, c, h, w = x.shape
-        assert (self.gamma.shape[1], self.beta.shape[1], self.tau.shape[1]) == (c, c, c)
+        assert (self.gamma.shape[1], self.alpha.shape[1],
+                self.beta.shape[1], self.tau.shape[1]) == (c, c, c, c)
 
-        # Compute the mean norm of activations per channel
-        nu2 = x.pow(2).mean(dim=(2,3), keepdim=True)
-        # Perform FRN
-        x = x * torch.rsqrt(nu2 + 1e-6 + torch.abs(self.eps))
-        # Return after applying the Offset-ReLU non-linearity
-        # print('iter:',iter)
-        if iter % 300 == 1:
-            c = {}
-            c['tau'] = np.array(self.tau.detach().cpu())
-            c['befor_max'] = np.array(x.detach().cpu())
-            fname = os.path.join('checkpoint',str(100000000+iter)+".npz")
-            np.savez(fname,**c)
-            # print('in dump')
-            c = {}
+        x = torch.min(x, self.alpha)
+
         return torch.max(self.gamma*x + self.beta, self.tau)
 
 class MaxMinFRN(nn.Module):
