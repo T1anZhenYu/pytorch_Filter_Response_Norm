@@ -40,7 +40,7 @@ class MyMin(torch.autograd.Function):
 
         x, tau = self.saved_tensors
         dl_dx = grad_output.clone()
-
+        dl_dx[x > tau] = 0
         dl_dtau = grad_output.clone()
 
         dl_dtau[x < tau] = 0
