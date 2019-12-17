@@ -66,7 +66,7 @@ class FilterResponseNormalization(nn.Module):
 
         x = torch.min(x, self.alpha)
         x = torch.max(self.gamma*x + self.beta, self.tau)
-        x = 2 * x /(self.alpha + self.tau)
+        x = x /(self.alpha - self.tau).detach()
         return x
 
 class MaxMinFRN(nn.Module):
