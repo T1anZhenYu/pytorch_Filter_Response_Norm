@@ -43,9 +43,9 @@ class MyMin(torch.autograd.Function):
 
         dl_dx = (x <= uplim).float() * grad_output + (x > uplim).float() * slope * grad_output
 
-        dl_duplime = (x > uplim) * (1 - slope) * grad_output
+        dl_duplime = (x > uplim).float() * (1 - slope) * grad_output
 
-        dl_dslope = (x > uplim) * (x - uplim) * grad_output
+        dl_dslope = (x > uplim).float() * (x - uplim) * grad_output
 
         return dl_dx, dl_duplime, dl_dslope
 
