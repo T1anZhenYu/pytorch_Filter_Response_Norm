@@ -33,7 +33,6 @@ class MyMin(torch.autograd.Function):
     def forward(self, x, uplim, slope):
         self.save_for_backward(x, uplim, slope)
 
-        output = x.clone()
         output = (x <= uplim).float() * x + (x > uplim).float() * (slope * x + uplim * (1 - slope))
         return output
 
