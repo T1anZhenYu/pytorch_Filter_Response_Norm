@@ -27,25 +27,28 @@ class Conv2d(nn.Conv2d):
 def BatchNorm2d(num_features):
     return nn.GroupNorm(num_channels=num_features, num_groups=32)
 
+
 class MyMin(torch.autograd.Function):
     @staticmethod
-    def forward(self, x, tau):
+    def forward(self, x, uplim, slope):
+        self.save_for_backward(x, uplim, slope)
 
-        self.save_for_backward(x, tau)
-        output = torch.min(x, tau)
+        output = x.clone()
+        output = (x <= uplim).float() * x + (x > uplim).float() * (slope * x + uplim * (1 - slope))
         return output
 
     @staticmethod
     def backward(self, grad_output):
+        x, uplim, slope = self.saved_tensors
 
-        x, tau = self.saved_tensors
-        dl_dx = grad_output.clone()
-        dl_dx[x > tau] = 0
-        dl_dtau = grad_output.clone()
+        dl_dx = (x <= uplim).float() * grad_output + (x > uplim).float() * slope * grad_output
 
-        dl_dtau[x < tau] = 0
-        # dl_dtau = dl_dtau.mean([0, 2, 3], keepdim=True)
-        return dl_dx, dl_dtau
+        dl_duplime = (x > uplim) * (1 - slope) * grad_output
+
+        dl_dslope = (x > uplim) * (x - uplim) * grad_output
+
+        return dl_dx, dl_duplime, dl_dslope
+
 class FilterResponseNormalization(nn.Module):
     def __init__(self, num_features, eps=1e-6):
         """
@@ -62,14 +65,17 @@ class FilterResponseNormalization(nn.Module):
              torch.Tensor(1, num_features, 1, 1), requires_grad=True)
         self.tau = nn.parameter.Parameter(
              torch.Tensor(1, num_features, 1, 1), requires_grad=True)
-        self.alpha = nn.parameter.Parameter(
+        self.uplim = nn.parameter.Parameter(
+             torch.Tensor(1, num_features, 1, 1), requires_grad=True)
+        self.slope = nn.parameter.Parameter(
              torch.Tensor(1, num_features, 1, 1), requires_grad=True)
         self.eps = nn.parameter.Parameter(torch.Tensor([eps]),requires_grad=False)
         self.min = MyMin.apply
         self.reset_parameters()
     def reset_parameters(self):
         nn.init.ones_(self.gamma)
-        nn.init.ones_(self.alpha)
+        nn.init.ones_(self.uplim)
+        nn.init.constant_(self.slope, 0.01)
         nn.init.zeros_(self.beta)
         nn.init.zeros_(self.tau)
     def forward(self, x, iter = 0):
@@ -80,10 +86,10 @@ class FilterResponseNormalization(nn.Module):
         """
 
         n, c, h, w = x.shape
-        assert (self.gamma.shape[1], self.alpha.shape[1],
+        assert (self.gamma.shape[1], self.uplim.shape[1],
                 self.beta.shape[1], self.tau.shape[1]) == (c, c, c, c)
 
-        x = self.min(x, self.alpha)
+        x = self.min(x, self.uplim,self.slope)
         x = torch.max(self.gamma*x + self.beta, self.tau)
         return x
 
