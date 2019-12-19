@@ -31,7 +31,7 @@ def BatchNorm2d(num_features):
 class MyMin(torch.autograd.Function):
     @staticmethod
     def forward(self, x, uplim, slope):
-        self.save_for_backward(x, uplim, slope)
+        self.save_for_backward(x, uplim,slope)
 
         output = (x <= uplim).float() * x + (x > uplim).float() * (slope * x + uplim * (1 - slope))
         return output
@@ -44,9 +44,9 @@ class MyMin(torch.autograd.Function):
 
         dl_duplime = (x > uplim).float() * (1 - slope) * grad_output
 
-        dl_dslope = (x > uplim).float() * (x - uplim) * grad_output
 
-        return dl_dx, dl_duplime, dl_dslope
+
+        return dl_dx, dl_duplime,None
 
 class FilterResponseNormalization(nn.Module):
     def __init__(self, num_features, eps=1e-6):
@@ -65,8 +65,6 @@ class FilterResponseNormalization(nn.Module):
         self.tau = nn.parameter.Parameter(
              torch.Tensor(1, num_features, 1, 1), requires_grad=True)
         self.uplim = nn.parameter.Parameter(
-             torch.Tensor(1, num_features, 1, 1), requires_grad=True)
-        self.slope = nn.parameter.Parameter(
              torch.Tensor(1, num_features, 1, 1), requires_grad=True)
         self.eps = nn.parameter.Parameter(torch.Tensor([eps]),requires_grad=False)
         self.min = MyMin.apply
@@ -88,7 +86,9 @@ class FilterResponseNormalization(nn.Module):
         assert (self.gamma.shape[1], self.uplim.shape[1],
                 self.beta.shape[1], self.tau.shape[1]) == (c, c, c, c)
 
-        x = self.min(x, self.uplim,self.slope)
+        slope = 1 / torch.log(torch.tensor(h*w + 1e-6).to(x.device))
+
+        x = self.min(x, self.uplim,slope)
         x = torch.max(self.gamma*x + self.beta, self.tau)
         return x
 
