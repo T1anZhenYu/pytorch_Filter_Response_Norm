@@ -94,6 +94,7 @@ os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu_id
 use_cuda = torch.cuda.is_available()
 print('current gpu:')
 print(torch.cuda.current_device())
+print("Let's use", torch.cuda.device_count(), "GPUs!\n")
 # Random seed
 if args.manualSeed is None:
     args.manualSeed = random.randint(1, 10000)
