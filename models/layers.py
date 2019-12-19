@@ -85,7 +85,7 @@ class FilterResponseNormalization(nn.Module):
         assert (self.gamma.shape[1], self.s.shape[1],
                 self.beta.shape[1], self.tau.shape[1]) == (c, c, c, c)
 
-        slope = torch.log(torch.tensor(h*w + 1e-6).to(x.device))
+        slope = torch.sqrt(torch.log(torch.tensor(h*w + 1e-6).to(x.device)))
 
         x = x /((1 + torch.abs(self.s))*slope)
         x = torch.max(self.gamma*x + self.beta, self.tau)
