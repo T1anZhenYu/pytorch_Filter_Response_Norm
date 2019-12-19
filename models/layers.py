@@ -72,7 +72,6 @@ class FilterResponseNormalization(nn.Module):
     def reset_parameters(self):
         nn.init.ones_(self.gamma)
         nn.init.ones_(self.uplim)
-        nn.init.constant_(self.slope, 0.01)
         nn.init.zeros_(self.beta)
         nn.init.zeros_(self.tau)
     def forward(self, x, iter = 0):
