@@ -67,7 +67,7 @@ class FilterResponseNormalization(nn.Module):
         self.s = nn.parameter.Parameter(
              torch.Tensor(1, num_features, 1, 1), requires_grad=True)
         self.eps = nn.parameter.Parameter(torch.Tensor([eps]),requires_grad=False)
-        self.min = MyMin.apply
+
         self.reset_parameters()
     def reset_parameters(self):
         nn.init.ones_(self.gamma)
@@ -82,7 +82,7 @@ class FilterResponseNormalization(nn.Module):
         """
 
         n, c, h, w = x.shape
-        assert (self.gamma.shape[1], self.uplim.shape[1],
+        assert (self.gamma.shape[1], self.s.shape[1],
                 self.beta.shape[1], self.tau.shape[1]) == (c, c, c, c)
 
         slope = torch.log(torch.tensor(h*w + 1e-6).to(x.device))
