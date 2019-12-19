@@ -87,7 +87,7 @@ class FilterResponseNormalization(nn.Module):
 
         slope = 1 / torch.log(torch.tensor(h*w + 1e-6).to(x.device))
 
-        x = self.min(x, self.uplim,slope)
+        x = x / slope
         x = torch.max(self.gamma*x + self.beta, self.tau)
         return x
 
