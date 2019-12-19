@@ -64,14 +64,14 @@ class FilterResponseNormalization(nn.Module):
              torch.Tensor(1, num_features, 1, 1), requires_grad=True)
         self.tau = nn.parameter.Parameter(
              torch.Tensor(1, num_features, 1, 1), requires_grad=True)
-        self.uplim = nn.parameter.Parameter(
+        self.s = nn.parameter.Parameter(
              torch.Tensor(1, num_features, 1, 1), requires_grad=True)
         self.eps = nn.parameter.Parameter(torch.Tensor([eps]),requires_grad=False)
         self.min = MyMin.apply
         self.reset_parameters()
     def reset_parameters(self):
         nn.init.ones_(self.gamma)
-        nn.init.ones_(self.uplim)
+        nn.init.ones_(self.s)
         nn.init.zeros_(self.beta)
         nn.init.zeros_(self.tau)
     def forward(self, x, iter = 0):
@@ -85,9 +85,9 @@ class FilterResponseNormalization(nn.Module):
         assert (self.gamma.shape[1], self.uplim.shape[1],
                 self.beta.shape[1], self.tau.shape[1]) == (c, c, c, c)
 
-        slope = 1 / torch.log(torch.tensor(h*w + 1e-6).to(x.device))
+        slope = torch.log(torch.tensor(h*w + 1e-6).to(x.device))
 
-        x = x * slope
+        x = x /(1 + torch.abs(self.s)*slope)
         x = torch.max(self.gamma*x + self.beta, self.tau)
         return x
 
