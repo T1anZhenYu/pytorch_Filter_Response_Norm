@@ -92,7 +92,7 @@ class FilterResponseNormalization(nn.Module):
         # slope = torch.sqrt(torch.log(torch.tensor(h*w + 1e-6).to(x.device)))
         # self.min(x, self.uplim, slope, self.s)
 
-        x = torch.max(self.gamma*x + self.beta, self.tau)
+        x = torch.max(x, self.tau)
         return x
 
 class MaxMinFRN(nn.Module):
