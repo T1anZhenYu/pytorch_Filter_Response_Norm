@@ -42,11 +42,11 @@ class MyFRN(torch.autograd.Function):
         x, x_hat, A = self.saved_tensors
         B,C,W,H = x.shape
         g = grad_output.clone()
-        g = torch.reshape(g,[B,C,W*H,1])
-        x_hat = torch.reshape(x_hat, [B,C,W*H,1])
+        # g = torch.reshape(g,[B,C,W*H,1])
+        # x_hat = torch.reshape(x_hat, [B,C,W*H,1])
         # x = torch.reshape(x, [B,C,W*H,1])
         dx = torch.rsqrt(A+1e-6) * torch.matmul((1 - torch.matmul(x_hat,torch.transpose(x_hat,2,3))),g)/(W*H)
-        dx = torch.reshape(dx,[B,C,W,H])
+        # dx = torch.reshape(dx,[B,C,W,H])
 
         return dx, None, None
 class FilterResponseNormalization(nn.Module):
