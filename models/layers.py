@@ -74,8 +74,8 @@ class FilterResponseNormalization(nn.Module):
         """
 
         n, c, h, w = x.shape
-        assert (self.gamma.shape[1], self.s.shape[1],
-                self.beta.shape[1], self.tau.shape[1]) == (c, c, c, c)
+        assert (self.gamma.shape[1],
+                self.beta.shape[1], self.tau.shape[1]) == (c, c, c)
 
         x = self.frn(x)
         x = torch.max(x, self.tau)
