@@ -48,6 +48,7 @@ class MyFRN(torch.autograd.Function):
         dx = torch.rsqrt(A+1e-6) * torch.matmul((1 - torch.matmul(x_hat,torch.transpose(x_hat,2,3))),g)/(W*H)
         dx = torch.reshape(dx,[B,C,W,H])
 
+        return dx, None, None
 class FilterResponseNormalization(nn.Module):
     def __init__(self, num_features, eps=1e-6):
         """
