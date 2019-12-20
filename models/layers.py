@@ -64,8 +64,6 @@ class FilterResponseNormalization(nn.Module):
         self.reset_parameters()
     def reset_parameters(self):
         nn.init.ones_(self.gamma)
-        nn.init.ones_(self.s,)
-        nn.init.ones_(self.uplim)
         nn.init.zeros_(self.beta)
         nn.init.zeros_(self.tau)
     def forward(self, x, iter = 0):
