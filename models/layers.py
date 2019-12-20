@@ -28,26 +28,21 @@ def BatchNorm2d(num_features):
     return nn.GroupNorm(num_channels=num_features, num_groups=32)
 
 
-class MyMin(torch.autograd.Function):
+class MyFRN(torch.autograd.Function):
     @staticmethod
-    def forward(self, x, uplim, slope,s):
-        self.save_for_backward(x, uplim,slope,s)
-        A = (1 + abs(s)) * slope
-        output = (x <= uplim).float() * x + (x > uplim).float() * (A * x + uplim * (1 - A))
-        return output
+    def forward(self, x):
+
+        A = x.pow(2).mean(dim=(2,3),keepdim=True)
+        x_hat = x / torch.sqrt(A + 1e-6)
+        self.save_for_backward(x, x_hat, A)
+        return x_hat
 
     @staticmethod
     def backward(self, grad_output):
-        x, uplim, slope,s = self.saved_tensors
-        A = (1 + abs(s)) * slope
-
-        dl_dx = (x <= uplim).float() * grad_output + (x > uplim).float() * A * grad_output
-
-        dl_duplime = (x > uplim).float() * (1 - A) * grad_output
-
-        dl_ds = (x > uplim).float() * (x - uplim) * torch.sign(s)
-
-        return dl_dx, dl_duplime,None,dl_ds
+        x, x_hat, A = self.saved_tensors
+        d1 = 1 - torch.mul(x_hat, torch.transpose(x_hat, 2, 3))
+        dx = d1 / torch.sqrt(A+1e-6) * grad_output
+        return dx, None, None
 
 class FilterResponseNormalization(nn.Module):
     def __init__(self, num_features, eps=1e-6):
@@ -65,12 +60,7 @@ class FilterResponseNormalization(nn.Module):
              torch.Tensor(1, num_features, 1, 1), requires_grad=True)
         self.tau = nn.parameter.Parameter(
              torch.Tensor(1, num_features, 1, 1), requires_grad=True)
-        self.s = nn.parameter.Parameter(
-             torch.Tensor(1, num_features, 1, 1), requires_grad=True)
-        self.uplim = nn.parameter.Parameter(
-             torch.Tensor(1, num_features, 1, 1), requires_grad=True)
-        self.eps = nn.parameter.Parameter(torch.Tensor([eps]),requires_grad=False)
-        self.min = MyMin.apply
+        self.frn = MyFRN.apply
         self.reset_parameters()
     def reset_parameters(self):
         nn.init.ones_(self.gamma)
@@ -89,53 +79,7 @@ class FilterResponseNormalization(nn.Module):
         assert (self.gamma.shape[1], self.s.shape[1],
                 self.beta.shape[1], self.tau.shape[1]) == (c, c, c, c)
 
-        # slope = torch.sqrt(torch.log(torch.tensor(h*w + 1e-6).to(x.device)))
-        # self.min(x, self.uplim, slope, self.s)
-
+        x = self.frn(x)
         x = torch.max(x, self.tau)
         return x
 
-class MaxMinFRN(nn.Module):
-    def __init__(self, num_features, eps=1e-6):
-        """
-        Input Variables:
-        ----------------
-            beta, gamma, tau: Variables of shape [1, C, 1, 1].
-            eps: A scalar constant or learnable variable.
-        """
-
-        super(MaxMinFRN, self).__init__()
-        self.beta = nn.parameter.Parameter(
-             torch.Tensor(1, num_features, 1, 1), requires_grad=True)
-        self.gamma = nn.parameter.Parameter(
-             torch.Tensor(1, num_features, 1, 1), requires_grad=True)
-        self.tau = nn.parameter.Parameter(
-             torch.Tensor(1, num_features, 1, 1), requires_grad=True)
-        self.eps = nn.parameter.Parameter(torch.Tensor([eps]),requires_grad=True)
-        self.reset_parameters()
-    def reset_parameters(self):
-        nn.init.ones_(self.gamma)
-        nn.init.zeros_(self.beta)
-        nn.init.zeros_(self.tau)
-    def forward(self, x):
-        """
-        Input Variables:
-        ----------------
-            x: Input tensor of shape [NxCxHxW]
-        """
-
-        n, c, h, w = x.shape
-        assert (self.gamma.shape[1], self.beta.shape[1], self.tau.shape[1]) == (c, c, c)
-
-        # Compute the max of activations per channel
-        channel_max = torch.max(torch.max(x,dim=2,keepdim=True)[0],dim=3,keepdim=True)[0]
-        channel_min = torch.min(torch.min(x,dim=2,keepdim=True)[0],dim=3,keepdim=True)[0]
-
-        Cn = torch.log(torch.tensor(h * w + 0.000001)) * 2
-        sigma = (channel_max - channel_min).pow(2)/Cn
-        mu = (channel_min + channel_max).pow(2)/4
-        nu2 = sigma + mu
-        # Perform FRN
-        x = x * torch.rsqrt(nu2 + 1e-6 + torch.abs(self.eps))
-        # Return after applying the Offset-ReLU non-linearity
-        return torch.max(self.gamma*x + self.beta, self.tau)
