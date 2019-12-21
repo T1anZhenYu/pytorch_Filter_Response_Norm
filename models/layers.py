@@ -89,6 +89,6 @@ class FilterResponseNormalization(nn.Module):
         # x = self.frn(x)
         A = x.pow(2).mean(dim=(2, 3), keepdim=True)
         x_hat = x / torch.sqrt(A + 1e-6)
-        x = torch.max(self.gamma*x + self.beta, self.tau)
+        x = torch.max(self.gamma*x_hat + self.beta, self.tau)
         return x
 
