@@ -40,16 +40,19 @@ class MyFRN(torch.autograd.Function):
     @staticmethod
     def backward(self, grad_output):
         x, x_hat, A = self.saved_tensors
-        B,C,W,H = x.shape
-        g = grad_output.clone()
-        g = g.view(B,C,W*H,1)
-        x_hat = x_hat.view(B,C,W*H,1)
-        # x = torch.reshape(x, [B,C,W*H,1])
-        dx = torch.rsqrt(A+1e-6) * torch.matmul((1 - torch.matmul(x_hat,
-            torch.transpose(x_hat,2,3))),g)/(W*H)
-        dx = dx.view(B,C,W,H)
 
+        B,C,W,H = x.shape
+        part1 = torch.sum(torch.diagonal(torch.matmul(torch.transpose(x_hat,2,3),grad_output),
+                                         dim1=2,dim2=3),dim=-1).view(B,C,1,1)
+
+        d1 = torch.mul(x_hat,part1)
+
+        d2 = torch.sum(grad_output,dim=(2,3)).repeat(1,1,W,H)
+
+        d3 = (-d1 + d2)/(W*H)
+        dx = d3 / torch.sqrt(A+1e-6)
         return dx, None, None
+
 class FilterResponseNormalization(nn.Module):
     def __init__(self, num_features, eps=1e-6):
         """
