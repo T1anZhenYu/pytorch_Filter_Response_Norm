@@ -32,7 +32,7 @@ class MyFRN(torch.autograd.Function):
     @staticmethod
     def forward(self, x):
 
-        A = x.pow(2).mean(dim=(2,3),keepdim=True)
+        A = x.pow(2).mean(dim=(2, 3), keepdim=True)
         x_hat = x / torch.sqrt(A + 1e-6)
         self.save_for_backward(x, x_hat, A)
         return x_hat
@@ -86,9 +86,9 @@ class FilterResponseNormalization(nn.Module):
         assert (self.gamma.shape[1],
                 self.beta.shape[1], self.tau.shape[1]) == (c, c, c)
 
-        # x = self.frn(x)
-        A = x.pow(2).mean(dim=(2, 3), keepdim=True)
-        x_hat = x / torch.sqrt(A + 1e-6)
-        x = torch.max(self.gamma*x_hat + self.beta, self.tau)
+        x = self.frn(x)
+        # A = x.pow(2).mean(dim=(2, 3), keepdim=True)
+        # x_hat = x / torch.sqrt(A + 1e-6)
+        x = torch.max(self.gamma*x + self.beta, self.tau)
         return x
 
