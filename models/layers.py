@@ -46,11 +46,9 @@ class MyFRN(torch.autograd.Function):
                                          dim1=2,dim2=3),dim=-1).view(B,C,1,1)
 
         d1 = torch.mul(x_hat,part1)
-        print('d1')
-        print(d1.shape)
+
         d2 = torch.sum(grad_output,dim=(2,3),keepdim=True).repeat(1,1,W,H)
-        print('d2')
-        print(d2.shape)
+
         d3 = (-d1 + d2)/(W*H)
         dx = d3 / torch.sqrt(A+1e-6)
         return dx, None, None
