@@ -35,7 +35,7 @@ class MyFRN(torch.autograd.Function):
         B,C,W,H = x.shape
         c_max = torch.abs(x).max(dim=2,keepdim=True)[0].max(dim=3,keepdim=True)[0]
         c_min = x.min(dim=2,keepdim=True)[0].min(dim=3,keepdim=True)[0]
-        A = (c_max/2).pow(2)
+        A = (c_max).pow(2)/2
         # print("A min")
         # print(A.shape)
         # print(A.min().item())
