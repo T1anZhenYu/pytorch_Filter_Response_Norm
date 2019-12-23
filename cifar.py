@@ -197,12 +197,12 @@ def main():
 
     # Train and val
     for epoch in range(start_epoch, args.epochs):
-        lr = adjust_learning_rate(optimizer, epoch)
+        lr, lr_max = adjust_learning_rate(optimizer, epoch)
 
         print('\nEpoch: [%d | %d] LR: %f' % (epoch + 1, args.epochs, state['lr']))
 
-        train_loss, train_acc = train(trainloader, model, criterion, optimizer, epoch, use_cuda,lr)
-        test_loss, test_acc = test(testloader, model, criterion, epoch, use_cuda,lr)
+        train_loss, train_acc = train(trainloader, model, criterion, optimizer, epoch, use_cuda,lr,lr_max)
+        test_loss, test_acc = test(testloader, model, criterion, epoch, use_cuda,lr,lr_max)
 
         # append logger file
         logger.append([state['lr'], train_loss, test_loss, train_acc, test_acc])
@@ -234,7 +234,7 @@ def main():
     print('Best acc:')
     print(best_acc)
 
-def train(trainloader, model, criterion, optimizer, epoch, use_cuda,lr):
+def train(trainloader, model, criterion, optimizer, epoch, use_cuda,lr, lr_max):
     # switch to train mode
     model.train()
 
@@ -255,7 +255,7 @@ def train(trainloader, model, criterion, optimizer, epoch, use_cuda,lr):
         inputs, targets = torch.autograd.Variable(inputs), torch.autograd.Variable(targets)
 
         # compute output
-        outputs = model(inputs, lr)
+        outputs = model(inputs, lr, lr_max)
         loss = criterion(outputs, targets)
 
         # measure accuracy and record loss
@@ -290,7 +290,7 @@ def train(trainloader, model, criterion, optimizer, epoch, use_cuda,lr):
     bar.finish()
     return (losses.avg, top1.avg)
 
-def test(testloader, model, criterion, epoch, use_cuda):
+def test(testloader, model, criterion, epoch, use_cuda,lr, lr_max):
     global best_acc
 
     batch_time = AverageMeter()
@@ -313,7 +313,7 @@ def test(testloader, model, criterion, epoch, use_cuda):
         inputs, targets = torch.autograd.Variable(inputs, volatile=True), torch.autograd.Variable(targets)
 
         # compute output
-        outputs = model(inputs)
+        outputs = model(inputs,lr,lr_max)
         loss = criterion(outputs, targets)
 
         # measure accuracy and record loss
@@ -381,7 +381,7 @@ def adjust_learning_rate(optimizer, epoch):
             state['lr'] *= args.gamma
         for param_group in optimizer.param_groups:
             param_group['lr'] = state['lr']
-    return lr,lr_max
+    return lr, lr_max
 
 if __name__ == '__main__':
     main()
