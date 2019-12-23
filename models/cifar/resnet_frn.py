@@ -58,7 +58,7 @@ class BasicBlock(nn.Module):
         out += residual
         out = self.relu(out)
 
-        return out
+        return (out, lr, lr_max)
 
 class ResNet_Frn(nn.Module):
 
