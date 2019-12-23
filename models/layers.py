@@ -33,12 +33,12 @@ class MyFRN(torch.autograd.Function):
     def forward(self, x):
         # sigma = max - min
         B,C,W,H = x.shape
-        c_max = x.max(dim=2,keepdim=True)[0].max(dim=3,keepdim=True)[0]
+        c_max = torch.abs(x).max(dim=2,keepdim=True)[0].max(dim=3,keepdim=True)[0]
         c_min = x.min(dim=2,keepdim=True)[0].min(dim=3,keepdim=True)[0]
         A = (c_max/2).pow(2)
-        print("A min")
-        print(A.shape)
-        print(A.min().item())
+        # print("A min")
+        # print(A.shape)
+        # print(A.min().item())
         x_hat = x / torch.sqrt(A + 1e-6)
         self.save_for_backward(x, A)
         return x_hat
