@@ -31,8 +31,10 @@ def BatchNorm2d(num_features):
 class MyFRN(torch.autograd.Function):
     @staticmethod
     def forward(self, x):
-
-        A = x.pow(2).mean(dim=(2, 3), keepdim=True)
+        # sigma = max - min
+        c_max = x.max(dim=2,keepdim=True)[0].max(dim=3,keepdim=True)[0]
+        c_min = x.min(dim=2,keepdim=True)[0].min(dim=3,keepdim=True)[0]
+        A = (c_max - c_min).pow(2)
         x_hat = x / torch.sqrt(A + 1e-6)
         self.save_for_backward(x, A)
         return x_hat
