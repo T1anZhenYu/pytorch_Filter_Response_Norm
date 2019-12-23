@@ -34,7 +34,12 @@ class MyFRN(torch.autograd.Function):
         # sigma = max - min
 
         A = x.pow(2).mean(dim=(2, 3), keepdim=True)
-        alpha = 1 + (lr_max - lr)/lr_max * torch.sqrt(A + 1e-6)
+        if lr / lr_max > 0.9:
+            alpha = 1
+        else:
+            alpha = (lr_max - lr)/lr_max * torch.sqrt(A + 1e-6)
+        # alpha = 1 + (lr_max - lr)/lr_max * torch.sqrt(A + 1e-6)
+
         x_hat = x / alpha
         self.save_for_backward(x, alpha)
         return x_hat
