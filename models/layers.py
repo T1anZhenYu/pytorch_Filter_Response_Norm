@@ -37,6 +37,7 @@ class MyFRN(torch.autograd.Function):
         c_min = x.min(dim=2,keepdim=True)[0].min(dim=3,keepdim=True)[0]
         A = (c_max/2).pow(2)
         print("A min")
+        print(A.shape)
         print(A.min)
         x_hat = x / torch.sqrt(A + 1e-6)
         self.save_for_backward(x, A)
