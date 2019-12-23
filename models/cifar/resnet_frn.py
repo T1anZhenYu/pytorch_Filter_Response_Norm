@@ -40,6 +40,8 @@ class BasicBlock(nn.Module):
 
 
     def forward(self, x):
+        print('tuple')
+        print(len(x))
         lr = x[1]
         lr_max = x[2]
         x = x[0]
