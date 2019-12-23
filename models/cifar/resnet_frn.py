@@ -12,8 +12,8 @@ import math
 from ..layers import FilterResponseNormalization
 
 __all__ = ['resnet_frn']
-global lr_g
-global lr_max_g
+
+
 def conv3x3(in_planes, out_planes, stride=1):
     "3x3 convolution with padding"
     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
@@ -41,7 +41,7 @@ class BasicBlock(nn.Module):
 
 
     def forward(self, x):
-        lr = lr_g
+        lr =  lr_g
         lr_max = lr_max_g
         residual = x
 
@@ -117,8 +117,9 @@ class ResNet_Frn(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x, lr, lr_max):
-
+        global lr_g
         lr_g = lr
+        global  lr_max_g
         lr_max_g = lr_max
 
         x = self.conv1(x)
