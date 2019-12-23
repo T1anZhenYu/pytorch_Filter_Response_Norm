@@ -39,7 +39,10 @@ class BasicBlock(nn.Module):
         # self.tlu2 = TLU(planes)
 
 
-    def forward(self, x, lr, lr_max):
+    def forward(self, x):
+        lr = x[1]
+        lr_max = x[2]
+        x = x[0]
         residual = x
 
         out = self.conv1(x)
@@ -120,9 +123,9 @@ class ResNet_Frn(nn.Module):
         x = self.frn1(x, lr, lr_max)
         # x = self.tlu1(x)
 
-        x = self.layer1(x, lr, lr_max)  # 32x32
-        x = self.layer2(x, lr, lr_max)  # 16x16
-        x = self.layer3(x, lr, lr_max)  # 8x8
+        x = self.layer1((x, lr, lr_max))  # 32x32
+        x = self.layer2((x, lr, lr_max)) # 16x16
+        x = self.layer3((x, lr, lr_max))  # 8x8
 
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
