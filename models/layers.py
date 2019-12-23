@@ -30,11 +30,11 @@ def BatchNorm2d(num_features):
 
 class MyFRN(torch.autograd.Function):
     @staticmethod
-    def forward(self, x,lr):
+    def forward(self, x, lr, lr_max):
         # sigma = max - min
-        lr0, lr_max = lr
+
         A = x.pow(2).mean(dim=(2, 3), keepdim=True)
-        alpha = 1 + (lr_max - lr0)/lr_max * torch.sqrt(A + 1e-6)
+        alpha = 1 + (lr_max - lr)/lr_max * torch.sqrt(A + 1e-6)
         x_hat = x / alpha
         self.save_for_backward(x, alpha)
         return x_hat
@@ -74,7 +74,7 @@ class FilterResponseNormalization(nn.Module):
         nn.init.ones_(self.gamma)
         nn.init.zeros_(self.beta)
         nn.init.zeros_(self.tau)
-    def forward(self, x, lr):
+    def forward(self, x, lr, lr_max):
         """
         Input Variables:
         ----------------
@@ -85,7 +85,7 @@ class FilterResponseNormalization(nn.Module):
         assert (self.gamma.shape[1],
                 self.beta.shape[1], self.tau.shape[1]) == (c, c, c)
 
-        x = self.frn(x,lr)
+        x = self.frn(x,lr, lr_max)
         # A = x.pow(2).mean(dim=(2, 3), keepdim=True)
         # x_hat = x / torch.sqrt(A + 1e-6)
         x = torch.max(self.gamma*x + self.beta, self.tau)

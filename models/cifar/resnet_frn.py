@@ -39,13 +39,13 @@ class BasicBlock(nn.Module):
         # self.tlu2 = TLU(planes)
 
 
-    def forward(self, x, lr):
+    def forward(self, x, lr, lr_max):
         residual = x
 
         out = self.conv1(x)
-        out = self.frn1(out, lr)
+        out = self.frn1(out, lr, lr_max)
         out = self.conv2(out)
-        out = self.frn2(out, lr)
+        out = self.frn2(out, lr, lr_max)
 
         if self.downsample is not None:
             residual = self.downsample(x)
@@ -113,16 +113,16 @@ class ResNet_Frn(nn.Module):
 
         return nn.Sequential(*layers)
 
-    def forward(self, x, lr):
+    def forward(self, x, lr, lr_max):
         x = self.conv1(x)
         # x = self.bn1(x)
         # x = self.relu(x)    # 32x32
-        x = self.frn1(x, lr)
+        x = self.frn1(x, lr, lr_max)
         # x = self.tlu1(x)
 
-        x = self.layer1(x, lr)  # 32x32
-        x = self.layer2(x, lr)  # 16x16
-        x = self.layer3(x, lr)  # 8x8
+        x = self.layer1(x, lr, lr_max)  # 32x32
+        x = self.layer2(x, lr, lr_max)  # 16x16
+        x = self.layer3(x, lr, lr_max)  # 8x8
 
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
