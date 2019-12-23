@@ -135,7 +135,7 @@ class ResNet_Frn(nn.Module):
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
         x = self.fc(x)
-        self.iter += 1
+
 
         return x
 
