@@ -41,14 +41,14 @@ class BasicBlock(nn.Module):
 
 
     def forward(self, x):
-        lr =  lr_g
-        lr_max = lr_max_g
+        epoch = epoch_g
+        total_epoch = total_epoch_g
         residual = x
 
         out = self.conv1(x)
-        out = self.frn1(out, lr, lr_max)
+        out = self.frn1(out, epoch, total_epoch)
         out = self.conv2(out)
-        out = self.frn2(out, lr, lr_max)
+        out = self.frn2(out, epoch, total_epoch)
 
         if self.downsample is not None:
             residual = self.downsample(x)
@@ -116,16 +116,16 @@ class ResNet_Frn(nn.Module):
 
         return nn.Sequential(*layers)
 
-    def forward(self, x, lr, lr_max):
-        global lr_g
-        lr_g = lr
-        global  lr_max_g
-        lr_max_g = lr_max
+    def forward(self, x, epoch, total_epoch):
+        global epoch_g
+        epoch_g = epoch
+        global  total_epoch_g
+        total_epoch_g = total_epoch
 
         x = self.conv1(x)
         # x = self.bn1(x)
         # x = self.relu(x)    # 32x32
-        x = self.frn1(x, lr, lr_max)
+        x = self.frn1(x, epoch, total_epoch)
         # x = self.tlu1(x)
 
         x = self.layer1(x)  # 32x32

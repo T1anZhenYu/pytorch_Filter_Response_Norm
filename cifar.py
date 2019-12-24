@@ -201,8 +201,8 @@ def main():
 
         print('\nEpoch: [%d | %d] LR: %f' % (epoch + 1, args.epochs, state['lr']))
 
-        train_loss, train_acc = train(trainloader, model, criterion, optimizer, epoch, use_cuda,lr,lr_max)
-        test_loss, test_acc = test(testloader, model, criterion, epoch, use_cuda,lr,lr_max)
+        train_loss, train_acc = train(trainloader, model, criterion, optimizer, epoch, use_cuda, args.epochs)
+        test_loss, test_acc = test(testloader, model, criterion, epoch, use_cuda, args.epochs)
 
         # append logger file
         logger.append([state['lr'], train_loss, test_loss, train_acc, test_acc])
@@ -234,7 +234,7 @@ def main():
     print('Best acc:')
     print(best_acc)
 
-def train(trainloader, model, criterion, optimizer, epoch, use_cuda,lr, lr_max):
+def train(trainloader, model, criterion, optimizer, epoch, use_cuda, total_epochs):
     # switch to train mode
     model.train()
 
@@ -255,7 +255,7 @@ def train(trainloader, model, criterion, optimizer, epoch, use_cuda,lr, lr_max):
         inputs, targets = torch.autograd.Variable(inputs), torch.autograd.Variable(targets)
 
         # compute output
-        outputs = model(inputs, lr, lr_max)
+        outputs = model(inputs, epoch, total_epochs)
         loss = criterion(outputs, targets)
 
         # measure accuracy and record loss
@@ -290,7 +290,7 @@ def train(trainloader, model, criterion, optimizer, epoch, use_cuda,lr, lr_max):
     bar.finish()
     return (losses.avg, top1.avg)
 
-def test(testloader, model, criterion, epoch, use_cuda,lr, lr_max):
+def test(testloader, model, criterion, epoch, use_cuda, total_epochs):
     global best_acc
 
     batch_time = AverageMeter()
@@ -313,7 +313,7 @@ def test(testloader, model, criterion, epoch, use_cuda,lr, lr_max):
         inputs, targets = torch.autograd.Variable(inputs, volatile=True), torch.autograd.Variable(targets)
 
         # compute output
-        outputs = model(inputs,lr,lr_max)
+        outputs = model(inputs,epoch,total_epochs)
         loss = criterion(outputs, targets)
 
         # measure accuracy and record loss
