@@ -35,7 +35,7 @@ class MyFRN(torch.autograd.Function):
 
         # A = x.pow(2).mean(dim=(2, 3), keepdim=True)
         if epoch < 0.1*total_epoch:
-            A = 1
+            A = torch.tensor(1.)
         elif epoch < 0.9*total_epoch:
             alpha = 5/(4*total_epoch)*epoch - 1 / 8
             A = torch.max(torch.tensor(1.),
