@@ -74,13 +74,12 @@ class FilterResponseNormalization(nn.Module):
              torch.Tensor(1, num_features, 1, 1), requires_grad=True)
         self.tau = nn.parameter.Parameter(
              torch.Tensor(1, num_features, 1, 1), requires_grad=True)
-        self.frn = MyFRN.apply
         self.reset_parameters()
     def reset_parameters(self):
         nn.init.ones_(self.gamma)
         nn.init.zeros_(self.beta)
         nn.init.zeros_(self.tau)
-    def forward(self, x, epoch, total_epoch):
+    def forward(self, x, epoch, total_epoch,start=0.1,end=0.9):
         """
         Input Variables:
         ----------------
@@ -91,9 +90,24 @@ class FilterResponseNormalization(nn.Module):
         assert (self.gamma.shape[1],
                 self.beta.shape[1], self.tau.shape[1]) == (c, c, c)
 
-        x = self.frn(x,epoch, total_epoch)
-        # A = x.pow(2).mean(dim=(2, 3), keepdim=True)
-        # x_hat = x / torch.sqrt(A + 1e-6)
-        x = torch.max(self.gamma*x + self.beta, self.tau)
+        if epoch / total_epoch <= start:
+            x = torch.max(self.gamma * x + self.beta, self.tau)
+        elif epoch / total_epoch <= end:
+            a = x.pow(2).mean(dim=(2, 3), keepdim=True)
+            alpha = (epoch/total_epoch)/(end-start) - start/(end-start)
+            # print('alpha')
+            # print(alpha)
+            # print('temp A')
+            # print(alpha*a)
+            A = torch.max(torch.tensor(1.),alpha * a)
+            # print('final A')
+            # print(A)
+            x = x / torch.sqrt(A + 1e-6)
+            x = torch.max(self.gamma * x + self.beta, self.tau)
+        else:
+            A = x.pow(2).mean(dim=(2, 3), keepdim=True)
+            x = x / torch.sqrt(A + 1e-6)
+            x = torch.max(self.gamma * x + self.beta, self.tau)
+
         return x
 
