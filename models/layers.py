@@ -95,13 +95,9 @@ class FilterResponseNormalization(nn.Module):
         elif epoch / total_epoch <= end:
             a = x.pow(2).mean(dim=(2, 3), keepdim=True)
             alpha =(epoch/total_epoch)/(end-start) - start/(end-start)
-            # print('alpha')
-            # print(alpha)
-            # print('temp A')
-            # print(alpha*a)
+
             A = torch.max(torch.tensor(1.).to(x.device),alpha * a)
-            # print('final A')
-            # print(A)
+
             x = x / torch.sqrt(A + 1e-6)
             x = torch.max(self.gamma * x + self.beta, self.tau)
         else:
