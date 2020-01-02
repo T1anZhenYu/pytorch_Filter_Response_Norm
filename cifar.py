@@ -197,7 +197,7 @@ def main():
 
     # Train and val
     for epoch in range(start_epoch, args.epochs):
-        lr, lr_max = adjust_learning_rate(optimizer, epoch)
+        adjust_learning_rate(optimizer, epoch)
 
         print('\nEpoch: [%d | %d] LR: %f' % (epoch + 1, args.epochs, state['lr']))
 
@@ -381,7 +381,7 @@ def adjust_learning_rate(optimizer, epoch):
             state['lr'] *= args.gamma
         for param_group in optimizer.param_groups:
             param_group['lr'] = state['lr']
-    return lr, lr_max
+
 
 if __name__ == '__main__':
     main()
