@@ -155,7 +155,7 @@ class ResNetFRN(nn.Module):
         total_epoch_g = total_epoch
 
         x = self.conv1(x)
-        x = self.bn1(x)
+        x = self.bn1(x, epoch, total_epoch)
         x = self.relu(x)
         x = self.maxpool(x)
 
