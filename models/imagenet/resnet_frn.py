@@ -148,7 +148,7 @@ class ResNetFRN(nn.Module):
 
         return nn.Sequential(*layers)
 
-    def forward(self, x,epoch, total_epoch):
+    def forward(self, x, epoch, total_epoch):
         global epoch_g
         epoch_g = epoch
         global  total_epoch_g
