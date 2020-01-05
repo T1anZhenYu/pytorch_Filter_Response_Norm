@@ -101,12 +101,6 @@ class FilterResponseNormalization(nn.Module):
 
             x = x / torch.sqrt(A + 1e-6 + torch.abs(self.eps))
             x = torch.max(self.gamma * x + self.beta, self.tau)
-            # a = x.pow(2).mean(dim=(2, 3), keepdim=True)
-            # alpha =(epoch/total_epoch)/(end-start) - start/(end-start)
-            # # beta = (epoch/total_epoch)/(start-end) - end/(start - end)
-            # A = torch.max(torch.tensor(1.).to(x.device), alpha * a)
-            # x = x / torch.sqrt(A + 1e-6)
-            # x = torch.max(self.gamma * x + self.beta, self.tau)
 
         return x
 
