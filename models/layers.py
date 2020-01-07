@@ -74,12 +74,14 @@ class FilterResponseNormalization(nn.Module):
              torch.Tensor(1, num_features, 1, 1), requires_grad=True)
         self.tau = nn.parameter.Parameter(
              torch.Tensor(1, num_features, 1, 1), requires_grad=True)
-        self.eps = nn.parameter.Parameter(torch.Tensor([eps]), requires_grad=False)
+        self.eps = nn.parameter.Parameter(
+             torch.Tensor(1, num_features, 1, 1), requires_grad=True)
         self.reset_parameters()
     def reset_parameters(self):
         nn.init.ones_(self.gamma)
         nn.init.zeros_(self.beta)
         nn.init.zeros_(self.tau)
+        nn.init.constant_(self.eps, 1e-6)
     def forward(self, x, epoch, total_epoch,start=0.1,end=0.9):
         """
         Input Variables:
@@ -99,7 +101,11 @@ class FilterResponseNormalization(nn.Module):
 
             A = torch.max(torch.tensor(1.).to(x.device),alpha * a)
 
-            x = x / torch.sqrt(A + 1e-6 + torch.abs(self.eps))
+            if h == w and h == 1:
+                print("h = 1")
+                x = x / torch.sqrt(A + 1e-6 + torch.abs(self.eps))
+            else:
+                x = x / torch.sqrt(A + 1e-6)
             x = torch.max(self.gamma * x + self.beta, self.tau)
 
         return x
