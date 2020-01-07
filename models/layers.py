@@ -105,7 +105,7 @@ class FilterResponseNormalization(nn.Module):
                 print("h = 1")
                 x = x / torch.sqrt(A + 1e-6 + torch.abs(self.eps))
             else:
-                x = x / torch.sqrt(A + 1e-6)
+                x = x / torch.sqrt(A + 2e-6)
             x = torch.max(self.gamma * x + self.beta, self.tau)
 
         return x
