@@ -88,22 +88,17 @@ class FilterResponseNormalization(nn.Module):
         ----------------
             x: Input tensor of shape [NxCxHxW]
         """
-
         n, c, h, w = x.shape
         assert (self.gamma.shape[1],
                 self.beta.shape[1], self.tau.shape[1]) == (c, c, c)
 
         if epoch / total_epoch <= start:
             x = torch.max(self.gamma * x + self.beta, self.tau)
-        else :
+        else:
             a = x.pow(2).mean(dim=(2, 3), keepdim=True)
             alpha =(epoch/total_epoch)/(end-start) - start/(end-start)
-
-            A = torch.max(torch.tensor(1.).to(x.device),alpha * a)
-
-
-            x = x / torch.sqrt(A + 1e-6 + torch.abs(self.eps))
-
+            A = torch.max(torch.tensor(1.).to(x.device), alpha * (a + torch.abs(self.eps)))
+            x = x / torch.sqrt(A + 1e-6)
             x = torch.max(self.gamma * x + self.beta, self.tau)
 
         return x
