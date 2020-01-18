@@ -257,7 +257,7 @@ def train(trainloader, model, criterion, optimizer, epoch, use_cuda):
         inputs, targets = torch.autograd.Variable(inputs), torch.autograd.Variable(targets)
 
         # compute output
-        outputs = model(inputs, epoch, total_epochs)
+        outputs = model(inputs)
         loss = criterion(outputs, targets)
 
         # measure accuracy and record loss
@@ -315,7 +315,7 @@ def test(testloader, model, criterion, epoch, use_cuda):
         inputs, targets = torch.autograd.Variable(inputs, volatile=True), torch.autograd.Variable(targets)
 
         # compute output
-        outputs = model(inputs,epoch,total_epochs)
+        outputs = model(inputs)
         loss = criterion(outputs, targets)
 
         # measure accuracy and record loss
