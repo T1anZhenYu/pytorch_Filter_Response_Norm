@@ -203,7 +203,8 @@ def main():
 
         print('\nEpoch: [%d | %d] LR: %f' % (epoch + 1, args.epochs, state['lr']))
 
-        train_loss, train_acc = train(trainloader, model, criterion, optimizer, epoch, use_cuda)
+        train_loss, train_acc = train(trainloader, model, criterion, optimizer, epoch,
+                                      use_cuda)
         test_loss, test_acc = test(testloader, model, criterion, epoch, use_cuda)
 
         # append logger file
