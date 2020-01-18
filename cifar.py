@@ -22,7 +22,7 @@ import models.cifar as models
 from progress.bar import Bar
 import math
 from utils import Logger, AverageMeter, accuracy, mkdir_p, savefig
-
+import setting
 
 model_names = sorted(name for name in models.__dict__
     if name.islower() and not name.startswith("__")
@@ -196,13 +196,15 @@ def main():
         return
 
     # Train and val
+    setting.total_epoch = args.epochs
     for epoch in range(start_epoch, args.epochs):
+        setting.temp_epoch = epoch
         adjust_learning_rate(optimizer, epoch)
 
         print('\nEpoch: [%d | %d] LR: %f' % (epoch + 1, args.epochs, state['lr']))
 
-        train_loss, train_acc = train(trainloader, model, criterion, optimizer, epoch, use_cuda, args.epochs)
-        test_loss, test_acc = test(testloader, model, criterion, epoch, use_cuda, args.epochs)
+        train_loss, train_acc = train(trainloader, model, criterion, optimizer, epoch, use_cuda)
+        test_loss, test_acc = test(testloader, model, criterion, epoch, use_cuda)
 
         # append logger file
         logger.append([state['lr'], train_loss, test_loss, train_acc, test_acc])
