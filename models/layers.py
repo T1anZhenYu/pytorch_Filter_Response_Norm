@@ -27,7 +27,6 @@ class Conv2d(nn.Conv2d):
 def BatchNorm2d(num_features):
     return nn.GroupNorm(num_channels=num_features, num_groups=32)
 
-
 class FilterResponseNormalization(nn.Module):
     def __init__(self, num_features, eps=1e-6):
         """
@@ -51,26 +50,34 @@ class FilterResponseNormalization(nn.Module):
         nn.init.ones_(self.gamma)
         nn.init.zeros_(self.beta)
         nn.init.zeros_(self.tau)
-        nn.init.constant_(self.eps, 1e-4)
+        nn.init.constant_(self.eps,1e-4)
     def forward(self, x,start=0.1,end=0.9):
         """
         Input Variables:
         ----------------
             x: Input tensor of shape [NxCxHxW]
         """
-        n, c, h, w = x.shape
+        if len(x.shape) == 4:
+            n, c, h, w = x.shape
+        elif len(x.shape) == 2:
+            n, c = x.shape
+            x.reshape([n, c, 1, 1])
+
         assert (self.gamma.shape[1],
                 self.beta.shape[1], self.tau.shape[1]) == (c, c, c)
 
         if setting.temp_epoch / setting.total_epoch <= start:
             x = torch.max(self.gamma * x + self.beta, self.tau)
-        else:
-            a = x.pow(2).mean(dim=(2, 3), keepdim=True)
-            alpha =(setting.temp_epoch / setting.total_epoch)/(end-start)\
+        else :
+            a = torch.abs(x).mean(dim=(2, 3), keepdim=True)
+            alpha =(setting.temp_epoch / setting.total_epoch)/(end-start) \
                    - start/(end-start)
-            A = torch.max(torch.tensor(1.).to(x.device),
-                          alpha * a + torch.abs(self.eps))
-            x = x / torch.sqrt(A + 1e-6)
+
+            A = torch.max(torch.tensor(1.).to(x.device), alpha * a +
+                          torch.abs(self.eps))
+
+            x = x / torch.sqrt(A + 1e-6 + torch.abs(self.eps))
             x = torch.max(self.gamma * x + self.beta, self.tau)
         return x
+
 
