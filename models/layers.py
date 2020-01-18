@@ -4,7 +4,7 @@ from torch.nn.parameter import Parameter
 from torch.nn import functional as F
 import numpy as np
 import os
-
+import setting
 class Conv2d(nn.Conv2d):
 
     def __init__(self, in_channels, out_channels, kernel_size, stride=1,
@@ -27,36 +27,6 @@ class Conv2d(nn.Conv2d):
 def BatchNorm2d(num_features):
     return nn.GroupNorm(num_channels=num_features, num_groups=32)
 
-
-class MyFRN(torch.autograd.Function):
-    @staticmethod
-    def forward(self, x, epoch, total_epoch):
-        # sigma = max - min
-
-        # A = x.pow(2).mean(dim=(2, 3), keepdim=True)
-        if epoch < 0.1*total_epoch:
-            A = torch.tensor(1.)
-        elif epoch < 0.9*total_epoch:
-            alpha = 5/(4*total_epoch)*epoch - 1 / 8
-            A = torch.max(torch.tensor(1.),
-                          alpha * x.pow(2).mean(dim=(2, 3), keepdim=True))
-
-        x_hat = x / torch.sqrt(A+1e-6)
-        self.save_for_backward(x, A)
-        return x_hat
-
-    @staticmethod
-    def backward(self, grad_output):
-        x, A = self.saved_tensors
-        B,C,W,H = x.shape
-        a = torch.mul(grad_output, torch.rsqrt(A+1e-6))
-        b = torch.matmul(grad_output, torch.transpose(x,2,3))
-        c = torch.diagonal(b,dim1=2,dim2=3)
-        d = torch.sum(c,dim=-1,keepdim=True).view(B,C,1,1)
-        e = torch.mul((A+1e-6).pow(-1.5)/(W * H),d)
-        f = torch.mul(e,x)
-        dx = a - f
-        return dx, None, None
 
 class FilterResponseNormalization(nn.Module):
     def __init__(self, num_features, eps=1e-6):
@@ -82,7 +52,7 @@ class FilterResponseNormalization(nn.Module):
         nn.init.zeros_(self.beta)
         nn.init.zeros_(self.tau)
         nn.init.constant_(self.eps, 1e-4)
-    def forward(self, x, epoch, total_epoch,start=0.1,end=0.9):
+    def forward(self, x,start=0.1,end=0.9):
         """
         Input Variables:
         ----------------
@@ -92,11 +62,12 @@ class FilterResponseNormalization(nn.Module):
         assert (self.gamma.shape[1],
                 self.beta.shape[1], self.tau.shape[1]) == (c, c, c)
 
-        if epoch / total_epoch <= start:
+        if setting.temp_epoch / setting.total_epoch <= start:
             x = torch.max(self.gamma * x + self.beta, self.tau)
         else:
             a = x.pow(2).mean(dim=(2, 3), keepdim=True)
-            alpha =(epoch/total_epoch)/(end-start) - start/(end-start)
+            alpha =(setting.temp_epoch / setting.total_epoch)/(end-start)\
+                   - start/(end-start)
             A = torch.max(torch.tensor(1.).to(x.device),
                           alpha * a + torch.abs(self.eps))
             x = x / torch.sqrt(A + 1e-6)
