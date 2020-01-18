@@ -236,7 +236,7 @@ def main():
     print('Best acc:')
     print(best_acc)
 
-def train(trainloader, model, criterion, optimizer, epoch, use_cuda, total_epochs):
+def train(trainloader, model, criterion, optimizer, epoch, use_cuda):
     # switch to train mode
     model.train()
 
@@ -292,7 +292,7 @@ def train(trainloader, model, criterion, optimizer, epoch, use_cuda, total_epoch
     bar.finish()
     return (losses.avg, top1.avg)
 
-def test(testloader, model, criterion, epoch, use_cuda, total_epochs):
+def test(testloader, model, criterion, epoch, use_cuda):
     global best_acc
 
     batch_time = AverageMeter()
