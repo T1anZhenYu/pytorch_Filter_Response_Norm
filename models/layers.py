@@ -64,7 +64,7 @@ class FilterResponseNormalization(nn.Module):
         if setting.temp_epoch / setting.total_epoch <= start:
             x = torch.max(self.gamma * x + self.beta, self.tau)
         else :
-            a = torch.abs(x).mean(dim=(2, 3), keepdim=True)
+            a = x.pow(2).mean(dim=(2, 3), keepdim=True)
             alpha =(setting.temp_epoch / setting.total_epoch)/(end-start) \
                    - start/(end-start)
 
