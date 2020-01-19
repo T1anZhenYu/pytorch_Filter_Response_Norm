@@ -62,8 +62,6 @@ class FilterResponseNormalization(nn.Module):
 
         assert (self.gamma.shape[1],
                 self.beta.shape[1], self.tau.shape[1]) == (c, c, c)
-        print('setting tempepoch')
-        print(setting.temp_epoch)
         if setting.temp_epoch / setting.total_epoch <= start:
             x = torch.max(self.gamma * x + self.beta, self.tau)
         else :
