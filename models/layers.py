@@ -59,8 +59,6 @@ class FilterResponseNormalization(nn.Module):
         """
 
         n, c, h, w = x.shape
-        print("setting totalepoch")
-        print(setting.total_epoch)
         assert (self.gamma.shape[1],
                 self.beta.shape[1], self.tau.shape[1]) == (c, c, c)
         if setting.temp_epoch / setting.total_epoch <= start:
