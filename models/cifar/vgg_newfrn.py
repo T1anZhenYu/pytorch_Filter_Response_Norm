@@ -10,7 +10,7 @@ from ..layers import *
 
 __all__ = [
   'vgg11_newfrn','vgg13_newfrn', 'vgg16_newfrn',
-    'vgg19_frn',
+    'vgg19_newfrn',
 ]
 
 
@@ -134,7 +134,7 @@ def vgg19(**kwargs):
     return model
 
 
-def vgg19_frn(**kwargs):
+def vgg19_newfrn(**kwargs):
     """VGGFRN 19-layer model (configuration 'E') with batch normalization"""
     model = VGGFRN(make_layers(cfg['E'], batch_norm=True), **kwargs)
     return model
