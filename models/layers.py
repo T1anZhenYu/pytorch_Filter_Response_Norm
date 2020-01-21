@@ -75,3 +75,41 @@ class NewFilterResponseNormalization(nn.Module):
         return x
 
 
+class OldFilterResponseNormalization(nn.Module):
+    def __init__(self, num_features, eps=1e-6):
+        """
+        Input Variables:
+        ----------------
+            beta, gamma, tau: Variables of shape [1, C, 1, 1].
+            eps: A scalar constant or learnable variable.
+        """
+
+        super(OldFilterResponseNormalization, self).__init__()
+        self.beta = nn.parameter.Parameter(
+             torch.Tensor(1, num_features, 1, 1), requires_grad=True)
+        self.gamma = nn.parameter.Parameter(
+             torch.Tensor(1, num_features, 1, 1), requires_grad=True)
+        self.tau = nn.parameter.Parameter(
+             torch.Tensor(1, num_features, 1, 1), requires_grad=True)
+        self.eps = nn.parameter.Parameter(
+             torch.Tensor(1, num_features, 1, 1), requires_grad=True)
+        self.reset_parameters()
+    def reset_parameters(self):
+        nn.init.ones_(self.gamma)
+        nn.init.zeros_(self.beta)
+        nn.init.zeros_(self.tau)
+        nn.init.constant_(self.eps, 1e-4)
+    def forward(self, x):
+        """
+        Input Variables:
+        ----------------
+            x: Input tensor of shape [NxCxHxW]
+        """
+
+        n, c, h, w = x.shape
+        assert (self.gamma.shape[1],
+                self.beta.shape[1], self.tau.shape[1]) == (c, c, c)
+        A = x.pow(2).mean(dim=(2, 3), keepdim=True)
+        x = x / torch.sqrt(A + 1e-6 + torch.abs(self.eps))
+        x = torch.max(self.gamma * x + self.beta, self.tau)
+        return x
