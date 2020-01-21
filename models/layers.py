@@ -68,7 +68,7 @@ class FilterResponseNormalization(nn.Module):
                    - start/(end-start)
 
             A = torch.max(torch.tensor(1.).to(x.device), alpha * a +
-                          torch.abs(self.eps) )
+                          torch.abs(self.eps))
 
             x = x / torch.sqrt(A + 1e-6)
             x = torch.max(self.gamma * x + self.beta, self.tau)
