@@ -9,8 +9,8 @@ from ..layers import *
 
 
 __all__ = [
-    'VGGFRN', 'vgg11', 'vgg11_oldfrn', 'vgg13', 'vgg13_oldfrn', 'vgg16', 'vgg16_oldfrn',
-    'vgg19_oldfrn', 'vgg19',
+     'vgg11_oldfrn', 'vgg13_oldfrn', 'vgg16_oldfrn',
+    'vgg19_oldfrn',
 ]
 
 
