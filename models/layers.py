@@ -27,7 +27,7 @@ class Conv2d(nn.Conv2d):
 def BatchNorm2d(num_features):
     return nn.GroupNorm(num_channels=num_features, num_groups=32)
 
-class FilterResponseNormalization(nn.Module):
+class NewFilterResponseNormalization(nn.Module):
     def __init__(self, num_features, eps=1e-6):
         """
         Input Variables:
@@ -36,7 +36,7 @@ class FilterResponseNormalization(nn.Module):
             eps: A scalar constant or learnable variable.
         """
 
-        super(FilterResponseNormalization, self).__init__()
+        super(NewFilterResponseNormalization, self).__init__()
         self.beta = nn.parameter.Parameter(
              torch.Tensor(1, num_features, 1, 1), requires_grad=True)
         self.gamma = nn.parameter.Parameter(

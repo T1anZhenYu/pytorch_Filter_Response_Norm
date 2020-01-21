@@ -9,7 +9,7 @@ from ..layers import *
 
 
 __all__ = [
-    'VGGFRN', 'vgg11', 'vgg11_frn', 'vgg13', 'vgg13_frn', 'vgg16', 'vgg16_frn',
+    'VGGFRN', 'vgg11', 'vgg11_newfrn', 'vgg13', 'vgg13_newfrn', 'vgg16', 'vgg16_newfrn',
     'vgg19_frn', 'vgg19',
 ]
 
@@ -43,7 +43,7 @@ class VGGFRN(nn.Module):
                 m.weight.data.normal_(0, math.sqrt(2. / n))
                 if m.bias is not None:
                     m.bias.data.zero_()
-            elif isinstance(m, FilterResponseNormalization):
+            elif isinstance(m, NewFilterResponseNormalization):
                 m.gamma.data.fill_(1)
                 m.beta.data.zero_()
             elif isinstance(m, nn.Linear):
@@ -61,7 +61,7 @@ def make_layers(cfg, batch_norm=False):
         else:
             conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)
             if batch_norm:
-                layers += [conv2d, FilterResponseNormalization(v), nn.ReLU(inplace=True)]
+                layers += [conv2d, NewFilterResponseNormalization(v), nn.ReLU(inplace=True)]
             else:
                 layers += [conv2d, nn.ReLU(inplace=True)]
             in_channels = v
@@ -86,7 +86,7 @@ def vgg11(**kwargs):
     return model
 
 
-def vgg11_frn(**kwargs):
+def vgg11_newfrn(**kwargs):
     """VGGFRN 11-layer model (configuration "A") with batch normalization"""
     model = VGGFRN(make_layers(cfg['A'], batch_norm=True), **kwargs)
     return model
@@ -102,7 +102,7 @@ def vgg13(**kwargs):
     return model
 
 
-def vgg13_frn(**kwargs):
+def vgg13_newfrn(**kwargs):
     """VGGFRN 13-layer model (configuration "B") with batch normalization"""
     model = VGGFRN(make_layers(cfg['B'], batch_norm=True), **kwargs)
     return model
@@ -118,7 +118,7 @@ def vgg16(**kwargs):
     return model
 
 
-def vgg16_frn(**kwargs):
+def vgg16_newfrn(**kwargs):
     """VGGFRN 16-layer model (configuration "D") with batch normalization"""
     model = VGGFRN(make_layers(cfg['D'], batch_norm=True), **kwargs)
     return model

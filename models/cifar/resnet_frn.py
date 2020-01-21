@@ -9,7 +9,7 @@ https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py
 '''
 import torch.nn as nn
 import math
-from ..layers import FilterResponseNormalization
+from ..layers import NewFilterResponseNormalization
 
 __all__ = ['resnet_frn']
 
@@ -33,11 +33,11 @@ class BasicBlock(nn.Module):
         self.downsample = downsample
         self.stride = stride
 
-        self.frn1 = FilterResponseNormalization(planes)
+        self.frn1 = NewFilterResponseNormalization(planes)
         # self.tlu1 = TLU(planes)
 
-        self.frn2 = FilterResponseNormalization(planes)
-        self.frn3 = FilterResponseNormalization(planes)
+        self.frn2 = NewFilterResponseNormalization(planes)
+        self.frn3 = NewFilterResponseNormalization(planes)
         # self.tlu2 = TLU(planes)
 
 
@@ -82,7 +82,7 @@ class ResNet_Frn(nn.Module):
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding=1,
                                bias=False)
         # self.bn1 = nn.BatchNorm2d(16)
-        self.frn1 = FilterResponseNormalization(16)
+        self.frn1 = NewFilterResponseNormalization(16)
         # self.tlu1 = TLU(16)
 
         self.relu = nn.ReLU(inplace=True)
@@ -96,7 +96,7 @@ class ResNet_Frn(nn.Module):
             if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
                 m.weight.data.normal_(0, math.sqrt(2. / n))
-            elif isinstance(m, FilterResponseNormalization):
+            elif isinstance(m, NewFilterResponseNormalization):
                 m.gamma.data.fill_(1)
                 m.beta.data.zero_()
 
@@ -106,7 +106,7 @@ class ResNet_Frn(nn.Module):
             downsample = nn.Sequential(
                 nn.Conv2d(self.inplanes, planes * block.expansion,
                           kernel_size=1, stride=stride, bias=False),
-                # FilterResponseNormalization(planes * block.expansion),
+                # NewFilterResponseNormalization(planes * block.expansion),
             )
 
         layers = []
