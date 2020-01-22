@@ -44,7 +44,7 @@ class NewFilterResponseNormalization(nn.Module):
         self.tau = nn.parameter.Parameter(
              torch.Tensor(1, num_features, 1, 1), requires_grad=True)
         self.eps = nn.parameter.Parameter(
-             torch.Tensor(1, num_features, 1, 1), requires_grad=True)
+             torch.Tensor(1, num_features, 1, 1), requires_grad=False)
         self.reset_parameters()
     def reset_parameters(self):
         nn.init.ones_(self.gamma)
@@ -58,10 +58,7 @@ class NewFilterResponseNormalization(nn.Module):
             x: Input tensor of shape [NxCxHxW]
         """
         n, c, h, w = x.shape
-        print('temp epoch')
-        print(setting.temp_epoch)
-        print('total epoch')
-        print(setting.total_epoch)
+
         assert (self.gamma.shape[1],
                 self.beta.shape[1], self.tau.shape[1]) == (c, c, c)
         if setting.temp_epoch / setting.total_epoch <= start:
