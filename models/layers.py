@@ -43,6 +43,8 @@ class NewFilterResponseNormalization(nn.Module):
              torch.Tensor(1, num_features, 1, 1), requires_grad=True)
         self.tau = nn.parameter.Parameter(
              torch.Tensor(1, num_features, 1, 1), requires_grad=True)
+        self.limit = nn.parameter.Parameter(
+             torch.Tensor(1, num_features, 1, 1), requires_grad=True)
         self.eps = nn.parameter.Parameter(
              torch.Tensor(1, num_features, 1, 1), requires_grad=False)
         self.reset_parameters()
@@ -50,6 +52,7 @@ class NewFilterResponseNormalization(nn.Module):
         nn.init.ones_(self.gamma)
         nn.init.zeros_(self.beta)
         nn.init.zeros_(self.tau)
+        nn.init.ones_(self.limit)
         nn.init.constant_(self.eps,1e-4)
     def forward(self, x,start=0.1,end=0.9):
         """
@@ -68,7 +71,7 @@ class NewFilterResponseNormalization(nn.Module):
             alpha =(setting.temp_epoch / setting.total_epoch)/(end-start) \
                    - start/(end-start)
 
-            A = torch.max(torch.tensor(1.).to(x.device), alpha * a +
+            A = torch.max(self.limit, alpha * a +
                           torch.abs(self.eps))
 
             x = x / torch.sqrt(A + 1e-6)
