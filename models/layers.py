@@ -54,7 +54,7 @@ class NewFilterResponseNormalization(nn.Module):
         nn.init.zeros_(self.tau)
         nn.init.ones_(self.limit)
         nn.init.constant_(self.eps,1e-4)
-    def forward(self, x,start=0,end=0.9):
+    def forward(self, x,start=0,end=1):
         """
         Input Variables:
         ----------------
