@@ -46,7 +46,7 @@ class NewFilterResponseNormalization(nn.Module):
         self.limit = nn.parameter.Parameter(
              torch.Tensor(1, num_features, 1, 1), requires_grad=True)
         self.eps = nn.parameter.Parameter(
-             torch.Tensor(1, num_features, 1, 1), requires_grad=False)
+             torch.Tensor(1, num_features, 1, 1), requires_grad=True)
         self.reset_parameters()
     def reset_parameters(self):
         nn.init.ones_(self.gamma)
