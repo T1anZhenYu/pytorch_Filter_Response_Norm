@@ -74,7 +74,7 @@ class NewFilterResponseNormalization(nn.Module):
             #               torch.abs(self.eps))
             part1 = (a > self.limit).float()
             part2 = (a <= self.limit).float()
-            A = part1*a/self.limit + part2*self.limit
+            A = part1*a + part2*self.limit
             x = x / torch.sqrt(A + 1e-6)
             x = torch.max(self.gamma * x + self.beta, self.tau)
         return x
