@@ -68,11 +68,13 @@ class NewFilterResponseNormalization(nn.Module):
             x = torch.max(self.gamma * x + self.beta, self.tau)
         else :
             a = x.pow(2).mean(dim=(2, 3), keepdim=True)
-            alpha = 1
+            # alpha = 1
 
-            A = torch.max(self.limit, alpha * a +
-                          torch.abs(self.eps))
-
+            # A = torch.max(self.limit, alpha * a +
+            #               torch.abs(self.eps))
+            part1 = a > self.limit
+            part2 = a <= self.limit
+            A = part1*a/self.limit + part2*self.limit
             x = x / torch.sqrt(A + 1e-6)
             x = torch.max(self.gamma * x + self.beta, self.tau)
         return x
