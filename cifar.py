@@ -167,6 +167,10 @@ def main():
                     depth=args.depth,
                     block_name=args.block_name,
                 )
+    elif args.arch.endswith('Inception3'):
+        model = models.__dict__[args.arch](
+                    num_classes=num_classes,
+                )
     else:
         model = models.__dict__[args.arch](num_classes=num_classes)
 
@@ -264,8 +268,14 @@ def train(trainloader, model, criterion, optimizer, epoch, use_cuda):
         inputs, targets = torch.autograd.Variable(inputs), torch.autograd.Variable(targets)
 
         # compute output
-        outputs = model(inputs)
-        loss = criterion(outputs, targets)
+        if args.arch.endswith('Inception3'):
+            outputs, outputs1 = model(inputs)
+            loss0 = criterion(outputs,targets)
+            loss1 = criterion(outputs1,targets)
+            loss = loss0 + 0.3 * loss1
+        else:
+            outputs = model(inputs)
+            loss = criterion(outputs, targets)
 
         # measure accuracy and record loss
         prec1, prec5 = accuracy(outputs.data, targets.data, topk=(1, 5))
