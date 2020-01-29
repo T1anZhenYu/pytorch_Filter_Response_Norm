@@ -52,7 +52,7 @@ class NewFilterResponseNormalization(nn.Module):
         nn.init.ones_(self.gamma)
         nn.init.zeros_(self.beta)
         nn.init.zeros_(self.tau)
-        nn.init.zeros_(self.limit)
+        nn.init.ones_(self.limit)
         nn.init.constant_(self.eps,1e-4)
     def forward(self, x,start=0,end=1):
         """
@@ -70,8 +70,7 @@ class NewFilterResponseNormalization(nn.Module):
             a = x.pow(2).mean(dim=(2, 3), keepdim=True)
             # alpha = 1
 
-            A = torch.max(torch.tensor(1.).to(x.device)+torch.abs(self.limit), a +
-                          torch.abs(self.eps))
+            A = torch.max(self.limit, a + torch.abs(self.eps))
 
             x = x / torch.sqrt(A + 1e-6)
             x = torch.max(self.gamma * x + self.beta, self.tau)
