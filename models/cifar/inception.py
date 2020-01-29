@@ -5,9 +5,7 @@ import warnings
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.jit.annotations import Optional
 from torch import Tensor
-from .utils import load_state_dict_from_url
 
 
 __all__ = ['Inception3']
@@ -17,13 +15,6 @@ model_urls = {
     # Inception v3 ported from TensorFlow
     'inception_v3_google': 'https://download.pytorch.org/models/inception_v3_google-1a9a5a14.pth',
 }
-
-InceptionOutputs = namedtuple('InceptionOutputs', ['logits', 'aux_logits'])
-InceptionOutputs.__annotations__ = {'logits': torch.Tensor, 'aux_logits': Optional[torch.Tensor]}
-
-# Script annotations failed with _GoogleNetOutputs = namedtuple ...
-# _InceptionOutputs set here for backwards compat
-_InceptionOutputs = InceptionOutputs
 
 
 def inception_v3(pretrained=False, progress=True, **kwargs):
@@ -40,22 +31,6 @@ def inception_v3(pretrained=False, progress=True, **kwargs):
         transform_input (bool): If True, preprocesses the input according to the method with which it
             was trained on ImageNet. Default: *False*
     """
-    if pretrained:
-        if 'transform_input' not in kwargs:
-            kwargs['transform_input'] = True
-        if 'aux_logits' in kwargs:
-            original_aux_logits = kwargs['aux_logits']
-            kwargs['aux_logits'] = True
-        else:
-            original_aux_logits = True
-        model = Inception3(**kwargs)
-        state_dict = load_state_dict_from_url(model_urls['inception_v3_google'],
-                                              progress=progress)
-        model.load_state_dict(state_dict)
-        if not original_aux_logits:
-            model.aux_logits = False
-            del model.AuxLogits
-        return model
 
     return Inception3(**kwargs)
 
