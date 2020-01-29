@@ -70,7 +70,7 @@ class NewFilterResponseNormalization(nn.Module):
             a = x.pow(2).mean(dim=(2, 3), keepdim=True)
             # alpha = 1
 
-            A = torch.max(+torch.abs(self.limit), a +
+            A = torch.max(torch.tensor(1.).to(x.device)+torch.abs(self.limit), a +
                           torch.abs(self.eps))
 
             x = x / torch.sqrt(A + 1e-6)
