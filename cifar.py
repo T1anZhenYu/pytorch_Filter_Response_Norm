@@ -167,7 +167,7 @@ def main():
                     depth=args.depth,
                     block_name=args.block_name,
                 )
-    elif args.arch.endswith('inception_v3'):
+    elif args.arch.endswith('inceptionv3'):
         model = models.__dict__[args.arch](
                     num_classes=num_classes,
                 )
@@ -268,7 +268,7 @@ def train(trainloader, model, criterion, optimizer, epoch, use_cuda):
         inputs, targets = torch.autograd.Variable(inputs), torch.autograd.Variable(targets)
 
         # compute output
-        if args.arch.endswith('inception_v3'):
+        if args.arch.endswith('inceptionv3'):
             outputs, outputs1 = model(inputs)
             loss0 = criterion(outputs,targets)
             loss1 = criterion(outputs1,targets)
