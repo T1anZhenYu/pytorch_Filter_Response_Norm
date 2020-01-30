@@ -8,7 +8,7 @@ import torch.nn.functional as F
 from torch import Tensor
 
 
-__all__ = ['Inception3']
+__all__ = ['inceptionV3']
 
 
 model_urls = {
@@ -404,3 +404,7 @@ class BasicConv2d(nn.Module):
         x = self.conv(x)
         x = self.bn(x)
         return F.relu(x, inplace=True)
+
+def inceptionV3(**kwargs):
+
+    return Inception3(**kwargs)
