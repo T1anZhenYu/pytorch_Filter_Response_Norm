@@ -171,6 +171,14 @@ def main():
         model = models.__dict__[args.arch](
                     num_classes=num_classes,
                 )
+    elif args.arch.endswith('inceptionv3_frn'):
+        model = models.__dict__[args.arch](
+                    num_classes=num_classes,
+                )
+    elif args.arch.endswith('inceptionv3_newfrn'):
+        model = models.__dict__[args.arch](
+                    num_classes=num_classes,
+                )
     else:
         model = models.__dict__[args.arch](num_classes=num_classes)
 

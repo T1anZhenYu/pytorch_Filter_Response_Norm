@@ -6,3 +6,5 @@ from .vgg_newfrn import *
 from .vgg_oldfrn import *
 from .resnet_oldfrn import *
 from .inception import *
+from .inception_frn import *
+from .inception_newfrn import *
