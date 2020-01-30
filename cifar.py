@@ -269,10 +269,10 @@ def train(trainloader, model, criterion, optimizer, epoch, use_cuda):
 
         # compute output
         if args.arch.endswith('inceptionv3'):
-            outputs, outputs1 = model(inputs)
+            outputs = model(inputs)
             loss0 = criterion(outputs,targets)
-            loss1 = criterion(outputs1,targets)
-            loss = loss0 + 0.3 * loss1
+            # loss1 = criterion(outputs1,targets)
+            loss = loss0
         else:
             outputs = model(inputs)
             loss = criterion(outputs, targets)
