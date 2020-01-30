@@ -8,7 +8,7 @@ import torch.nn.functional as F
 from torch import Tensor
 
 
-__all__ = ['inceptionV3']
+__all__ = ['inception_v3']
 
 
 model_urls = {
@@ -17,7 +17,7 @@ model_urls = {
 }
 
 
-def inception_v3(pretrained=False, progress=True, **kwargs):
+def inception_v3(**kwargs):
     r"""Inception v3 model architecture from
     `"Rethinking the Inception Architecture for Computer Vision" <http://arxiv.org/abs/1512.00567>`_.
     .. note::
@@ -404,7 +404,3 @@ class BasicConv2d(nn.Module):
         x = self.conv(x)
         x = self.bn(x)
         return F.relu(x, inplace=True)
-
-def inceptionV3(**kwargs):
-
-    return Inception3(**kwargs)
