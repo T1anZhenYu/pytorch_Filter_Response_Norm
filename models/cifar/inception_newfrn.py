@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from ..layers import*
-__all__ = ['inceptionv3_frn']
+__all__ = ['inceptionv3_newfrn']
 class BasicConv2d(nn.Module):
 
     def __init__(self, input_channels, output_channels, **kwargs):
@@ -318,5 +318,5 @@ class InceptionV3(nn.Module):
         return x
 
 
-def inceptionv3_frn(**kwargs):
+def inceptionv3_newfrn(**kwargs):
     return InceptionV3(**kwargs)
