@@ -102,7 +102,7 @@ class noalpha(nn.Module):
         nn.init.ones_(self.gamma)
         nn.init.zeros_(self.beta)
         nn.init.zeros_(self.tau)
-        nn.init.ones_(self.limit)
+        nn.init.zeros_(self.limit)
         nn.init.constant_(self.eps,1e-4)
     def forward(self, x,start=0,end=1):
         """
