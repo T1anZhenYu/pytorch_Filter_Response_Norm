@@ -61,6 +61,56 @@ class NewFilterResponseNormalization(nn.Module):
             x: Input tensor of shape [NxCxHxW]
         """
         n, c, h, w = x.shape
+
+        assert (self.gamma.shape[1],
+                self.beta.shape[1], self.tau.shape[1]) == (c, c, c)
+        if setting.temp_epoch / setting.total_epoch <= start:
+            x = torch.max(self.gamma * x + self.beta, self.tau)
+        else :
+            a = x.pow(2).mean(dim=(2, 3), keepdim=True)
+            alpha =(setting.temp_epoch / setting.total_epoch)/(end-start) \
+                   - start/(end-start)
+
+            A = torch.max(self.limit, alpha * a +
+                          torch.abs(self.eps))
+
+            x = x / torch.sqrt(A + 1e-6)
+            x = torch.max(self.gamma * x + self.beta, self.tau)
+        return x
+class noalpha(nn.Module):
+    def __init__(self, num_features, eps=1e-6):
+        """
+        Input Variables:
+        ----------------
+            beta, gamma, tau: Variables of shape [1, C, 1, 1].
+            eps: A scalar constant or learnable variable.
+        """
+
+        super(noalpha, self).__init__()
+        self.beta = nn.parameter.Parameter(
+             torch.Tensor(1, num_features, 1, 1), requires_grad=True)
+        self.gamma = nn.parameter.Parameter(
+             torch.Tensor(1, num_features, 1, 1), requires_grad=True)
+        self.tau = nn.parameter.Parameter(
+             torch.Tensor(1, num_features, 1, 1), requires_grad=True)
+        self.limit = nn.parameter.Parameter(
+             torch.Tensor(1, num_features, 1, 1), requires_grad=True)
+        self.eps = nn.parameter.Parameter(
+             torch.Tensor(1, num_features, 1, 1), requires_grad=True)
+        self.reset_parameters()
+    def reset_parameters(self):
+        nn.init.ones_(self.gamma)
+        nn.init.zeros_(self.beta)
+        nn.init.zeros_(self.tau)
+        nn.init.ones_(self.limit)
+        nn.init.constant_(self.eps,1e-4)
+    def forward(self, x,start=0,end=1):
+        """
+        Input Variables:
+        ----------------
+            x: Input tensor of shape [NxCxHxW]
+        """
+        n, c, h, w = x.shape
         assert (self.gamma.shape[1],
                 self.beta.shape[1], self.tau.shape[1]) == (c, c, c)
 
