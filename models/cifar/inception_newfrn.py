@@ -7,7 +7,7 @@ class BasicConv2d(nn.Module):
     def __init__(self, input_channels, output_channels, **kwargs):
         super().__init__()
         self.conv = nn.Conv2d(input_channels, output_channels, bias=False, **kwargs)
-        self.bn = NewFilterResponseNormalization(output_channels)
+        self.bn = noalpha(output_channels)
         self.relu = nn.ReLU(inplace=True)
 
     def forward(self, x):
