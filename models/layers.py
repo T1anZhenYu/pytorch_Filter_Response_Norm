@@ -64,16 +64,17 @@ class NewFilterResponseNormalization(nn.Module):
 
         assert (self.gamma.shape[1],
                 self.beta.shape[1], self.tau.shape[1]) == (c, c, c)
-        if setting.temp_epoch / setting.total_epoch <= start:
-            x = torch.max(self.gamma * x + self.beta, self.tau)
+        if h==1:
+            A = x.pow(2).mean(dim=(2, 3), keepdim=True)
+            x = x / torch.sqrt(A + 1e-6 + torch.abs(self.eps))
+
         else :
             a = x.pow(2).mean(dim=(2, 3), keepdim=True)
             # alpha = 1
-
             A = torch.max(self.limit, a + torch.abs(self.eps))
 
             x = x / torch.sqrt(A + 1e-6)
-            x = torch.max(self.gamma * x + self.beta, self.tau)
+        x = torch.max(self.gamma * x + self.beta, self.tau)
         return x
 
 
