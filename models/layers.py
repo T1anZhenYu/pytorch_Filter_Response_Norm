@@ -61,8 +61,6 @@ class NewFilterResponseNormalization(nn.Module):
             x: Input tensor of shape [NxCxHxW]
         """
         n, c, h, w = x.shape
-        print("shape:",x.shape)
-
         assert (self.gamma.shape[1],
                 self.beta.shape[1], self.tau.shape[1]) == (c, c, c)
 
