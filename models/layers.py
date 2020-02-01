@@ -113,7 +113,10 @@ class noalpha(nn.Module):
         n, c, h, w = x.shape
         assert (self.gamma.shape[1],
                 self.beta.shape[1], self.tau.shape[1]) == (c, c, c)
-
+        print('limit shape',self.limit.shape)
+        print(self.limit)
+        print("tau shape",self.tau)
+        print(self.tau)
         A = x.pow(2).mean(dim=(2, 3), keepdim=True)
         # alpha = 1
         A = torch.max(self.limit, A + torch.abs(self.eps))
