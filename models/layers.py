@@ -213,7 +213,7 @@ class NewBatchNorm2d(nn.Module):
             x = self.gamma * (x - mean) / torch.sqrt(var + self.eps) + self.beta
             self.running_var = (self.momentum) * self.running_var + (1 - self.momentum) * var
 
-            self.running_mean = (1 - self.momentum) * self.running_mean + (self.momentum) * mean
+            self.running_mean = (self.momentum) * self.running_mean + (1-self.momentum) * mean
         else:
 
             x = self.gamma * (x - self.running_mean) / (torch.sqrt(self.running_var +
