@@ -187,8 +187,8 @@ class NewBatchNorm2d(nn.Module):
             self.gamma = nn.parameter.Parameter(
                 torch.Tensor(1, num_features, 1, 1), requires_grad=False)
         self.eps = eps
-        self.register_buffer('running_mean', torch.zeros(1, num_features, 1, 1))
-        self.register_buffer('running_var', torch.ones(1, num_features, 1, 1))
+        self.running_mean = torch.zeros(1, num_features, 1, 1)
+        self.running_var = torch.ones(1, num_features, 1, 1)
         # self.running_var = torch.Tensor(1, num_features, 1, 1)
         self.limit = nn.parameter.Parameter(
                 torch.Tensor(1, num_features, 1, 1), requires_grad=True)
@@ -201,8 +201,6 @@ class NewBatchNorm2d(nn.Module):
         nn.init.zeros_(self.beta)
         nn.init.ones_(self.running_var)
         nn.init.constant_(self.limit,0.1)
-        self.running_mean.zero_()
-        self.running_var.fill_(1)
 
     def forward(self, x):
 
