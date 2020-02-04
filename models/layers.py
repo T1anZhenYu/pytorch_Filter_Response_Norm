@@ -209,9 +209,10 @@ class NewBatchNorm2d(nn.Module):
         if self.training:
             mean = x.mean(dim=(0, 2, 3), keepdim=True).to(x.device)
             var = (x - mean).pow(2).mean(dim=(0, 2, 3), keepdim=True).to(x.device)
+            self.running_var = (self.momentum) * self.running_var + (1 - self.momentum) * var
             var = torch.max(self.limit,var)
             x = self.gamma * (x - mean) / torch.sqrt(var + self.eps) + self.beta
-            self.running_var = (self.momentum) * self.running_var + (1 - self.momentum) * var
+            # self.running_var = (self.momentum) * self.running_var + (1 - self.momentum) * var
 
             self.running_mean = (self.momentum) * self.running_mean + (1-self.momentum) * mean
         else:
