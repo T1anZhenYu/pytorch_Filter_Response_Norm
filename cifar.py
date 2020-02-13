@@ -390,7 +390,7 @@ def adjust_learning_rate(optimizer, epoch):
     lr_max = 0.1 * args.train_batch / 256
     if args.cos:
         if epoch <= args.ramp_up:
-            lr = lr_min + 0.5*(lr_max - lr_min)*(1 - math.cos(epoch/args.ramp_up*math.pi))
+            lr = lr_min + 0.5*(lr_max - lr_min)*(1 - math.cos(epoch/(args.ramp_up+1)*math.pi))
         else :
             lr = lr_min + 0.5*(lr_max - lr_min)*\
                  (1 + math.cos((epoch - args.ramp_up)/(args.epochs - args.ramp_up)*math.pi))
