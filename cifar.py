@@ -22,7 +22,7 @@ import models.cifar as models
 from progress.bar import Bar
 import math
 from utils import Logger, AverageMeter, accuracy, mkdir_p, savefig
-
+import setting
 
 model_names = sorted(name for name in models.__dict__
     if name.islower() and not name.startswith("__")
@@ -92,7 +92,9 @@ assert args.dataset == 'cifar10' or args.dataset == 'cifar100', 'Dataset can onl
 # Use CUDA
 os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu_id
 use_cuda = torch.cuda.is_available()
-
+print('current gpu:')
+print(torch.cuda.current_device())
+print("Let's use", torch.cuda.device_count(), "GPUs!\n")
 # Random seed
 if args.manualSeed is None:
     args.manualSeed = random.randint(1, 10000)
@@ -147,17 +149,41 @@ def main():
                     depth=args.depth,
                     block_name=args.block_name,
                 )
-    elif args.arch.endswith('resnet_frn'):
+    elif args.arch.endswith('resnet_newfrn'):
         model = models.__dict__[args.arch](
                     num_classes=num_classes,
                     depth=args.depth,
                     block_name=args.block_name,
                 )
-    elif args.arch.endswith('resnet_max_min_frn'):
+    elif args.arch.endswith('resnet_noalpha'):
         model = models.__dict__[args.arch](
                     num_classes=num_classes,
                     depth=args.depth,
                     block_name=args.block_name,
+                )
+    elif args.arch.endswith('resnet_oldfrn'):
+        model = models.__dict__[args.arch](
+                    num_classes=num_classes,
+                    depth=args.depth,
+                    block_name=args.block_name,
+                )
+    elif args.arch.endswith('resnet_newbn'):
+        model = models.__dict__[args.arch](
+                    num_classes=num_classes,
+                    depth=args.depth,
+                    block_name=args.block_name,
+                )
+    elif args.arch.endswith('inceptionv3'):
+        model = models.__dict__[args.arch](
+                    num_classes=num_classes,
+                )
+    elif args.arch.endswith('inceptionv3_frn'):
+        model = models.__dict__[args.arch](
+                    num_classes=num_classes,
+                )
+    elif args.arch.endswith('inceptionv3_newfrn'):
+        model = models.__dict__[args.arch](
+                    num_classes=num_classes,
                 )
     else:
         model = models.__dict__[args.arch](num_classes=num_classes)
@@ -179,7 +205,7 @@ def main():
         best_acc = checkpoint['best_acc']
         start_epoch = checkpoint['epoch']
         model.load_state_dict(checkpoint['state_dict'])
-
+        adjust_learning_rate(optimizer, start_epoch)
         optimizer.load_state_dict(checkpoint['optimizer'])
         logger = Logger(os.path.join(args.checkpoint, 'log.txt'), title=title, resume=True)
     else:
@@ -194,12 +220,15 @@ def main():
         return
 
     # Train and val
+    setting.total_epoch = args.epochs
     for epoch in range(start_epoch, args.epochs):
+        setting.temp_epoch = epoch
         adjust_learning_rate(optimizer, epoch)
 
         print('\nEpoch: [%d | %d] LR: %f' % (epoch + 1, args.epochs, state['lr']))
 
-        train_loss, train_acc = train(trainloader, model, criterion, optimizer, epoch, use_cuda)
+        train_loss, train_acc = train(trainloader, model, criterion, optimizer, epoch,
+                                      use_cuda)
         test_loss, test_acc = test(testloader, model, criterion, epoch, use_cuda)
 
         # append logger file
@@ -253,8 +282,14 @@ def train(trainloader, model, criterion, optimizer, epoch, use_cuda):
         inputs, targets = torch.autograd.Variable(inputs), torch.autograd.Variable(targets)
 
         # compute output
-        outputs = model(inputs)
-        loss = criterion(outputs, targets)
+        if args.arch.endswith('inceptionv3'):
+            outputs = model(inputs)
+            loss0 = criterion(outputs,targets)
+            # loss1 = criterion(outputs1,targets)
+            loss = loss0
+        else:
+            outputs = model(inputs)
+            loss = criterion(outputs, targets)
 
         # measure accuracy and record loss
         prec1, prec5 = accuracy(outputs.data, targets.data, topk=(1, 5))
@@ -361,7 +396,7 @@ def adjust_learning_rate(optimizer, epoch):
     lr_max = 0.1 * args.train_batch / 256
     if args.cos:
         if epoch <= args.ramp_up:
-            lr = lr_min + 0.5*(lr_max - lr_min)*(1 - math.cos(epoch/args.ramp_up*math.pi))
+            lr = lr_min + 0.5*(lr_max - lr_min)*(1 - math.cos(epoch/(args.ramp_up+1)*math.pi))
         else :
             lr = lr_min + 0.5*(lr_max - lr_min)*\
                  (1 + math.cos((epoch - args.ramp_up)/(args.epochs - args.ramp_up)*math.pi))
@@ -373,12 +408,17 @@ def adjust_learning_rate(optimizer, epoch):
             param_group['lr'] = lr
     else:
         print('in linear decay')
-        if epoch == 0:
-            state['lr'] = args.lr_max
-        if epoch in args.schedule:
+        if epoch <= args.ramp_up:
+            lr = lr_min + 0.5*(args.lr_max - lr_min)*(1 - math.cos(epoch/(args.ramp_up+1)*math.pi))
+            state['lr'] = lr
+        elif epoch in args.schedule:
             state['lr'] *= args.gamma
-        for param_group in optimizer.param_groups:
-            param_group['lr'] = state['lr']
+            for param_group in optimizer.param_groups:
+                param_group['lr'] = state['lr']
+        else:
+            for param_group in optimizer.param_groups:
+                 state['lr'] = param_group['lr']
+
 
 if __name__ == '__main__':
     main()

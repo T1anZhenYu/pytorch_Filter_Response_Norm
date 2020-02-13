@@ -2,8 +2,9 @@ import torch
 import torch.nn as nn
 from torch.nn.parameter import Parameter
 from torch.nn import functional as F
-
-
+import numpy as np
+import os
+import setting
 class Conv2d(nn.Conv2d):
 
     def __init__(self, in_channels, out_channels, kernel_size, stride=1,
@@ -26,8 +27,7 @@ class Conv2d(nn.Conv2d):
 def BatchNorm2d(num_features):
     return nn.GroupNorm(num_channels=num_features, num_groups=32)
 
-
-class FilterResponseNormalization(nn.Module):
+class NewFilterResponseNormalization(nn.Module):
     def __init__(self, num_features, eps=1e-6):
         """
         Input Variables:
@@ -36,37 +36,48 @@ class FilterResponseNormalization(nn.Module):
             eps: A scalar constant or learnable variable.
         """
 
-        super(FilterResponseNormalization, self).__init__()
+        super(NewFilterResponseNormalization, self).__init__()
         self.beta = nn.parameter.Parameter(
              torch.Tensor(1, num_features, 1, 1), requires_grad=True)
         self.gamma = nn.parameter.Parameter(
              torch.Tensor(1, num_features, 1, 1), requires_grad=True)
         self.tau = nn.parameter.Parameter(
              torch.Tensor(1, num_features, 1, 1), requires_grad=True)
-        self.eps = nn.parameter.Parameter(torch.Tensor([eps]),requires_grad=False)
+        self.limit = nn.parameter.Parameter(
+             torch.Tensor(1, num_features, 1, 1), requires_grad=True)
+        self.eps = nn.parameter.Parameter(
+             torch.Tensor(1, num_features, 1, 1), requires_grad=True)
         self.reset_parameters()
     def reset_parameters(self):
         nn.init.ones_(self.gamma)
         nn.init.zeros_(self.beta)
         nn.init.zeros_(self.tau)
-    def forward(self, x):
+        nn.init.constant_(self.limit,0.1)
+        nn.init.constant_(self.eps,1e-4)
+    def forward(self, x,start=0,end=1):
         """
         Input Variables:
         ----------------
             x: Input tensor of shape [NxCxHxW]
         """
-
         n, c, h, w = x.shape
-        assert (self.gamma.shape[1], self.beta.shape[1], self.tau.shape[1]) == (c, c, c)
 
-        # Compute the mean norm of activations per channel
-        nu2 = x.pow(2).mean(dim=(2,3), keepdim=True)
-        # Perform FRN
-        x = x * torch.rsqrt(nu2 + 1e-6 + torch.abs(self.eps))
-        # Return after applying the Offset-ReLU non-linearity
-        return torch.max(self.gamma*x + self.beta, self.tau)
+        assert (self.gamma.shape[1],
+                self.beta.shape[1], self.tau.shape[1]) == (c, c, c)
+        if setting.temp_epoch / setting.total_epoch <= start:
+            x = torch.max(self.gamma * x + self.beta, self.tau)
+        else :
+            a = x.pow(2).mean(dim=(2, 3), keepdim=True)
+            alpha =(setting.temp_epoch / setting.total_epoch)/(end-start) \
+                   - start/(end-start)
 
-class MaxMinFRN(nn.Module):
+            A = torch.max(self.limit, alpha * a +
+                          torch.abs(self.eps))
+
+            x = x / torch.sqrt(A + 1e-6)
+            x = torch.max(self.gamma * x + self.beta, self.tau)
+        return x
+class noalpha(nn.Module):
     def __init__(self, num_features, eps=1e-6):
         """
         Input Variables:
@@ -75,19 +86,70 @@ class MaxMinFRN(nn.Module):
             eps: A scalar constant or learnable variable.
         """
 
-        super(MaxMinFRN, self).__init__()
+        super(noalpha, self).__init__()
         self.beta = nn.parameter.Parameter(
              torch.Tensor(1, num_features, 1, 1), requires_grad=True)
         self.gamma = nn.parameter.Parameter(
              torch.Tensor(1, num_features, 1, 1), requires_grad=True)
         self.tau = nn.parameter.Parameter(
              torch.Tensor(1, num_features, 1, 1), requires_grad=True)
-        self.eps = nn.parameter.Parameter(torch.Tensor([eps]),requires_grad=True)
+        self.limit = nn.parameter.Parameter(
+             torch.Tensor(1, num_features, 1, 1), requires_grad=True)
+        self.eps = nn.parameter.Parameter(
+             torch.Tensor(1, num_features, 1, 1), requires_grad=True)
         self.reset_parameters()
     def reset_parameters(self):
         nn.init.ones_(self.gamma)
         nn.init.zeros_(self.beta)
         nn.init.zeros_(self.tau)
+        nn.init.constant_(self.limit,0.1)
+        nn.init.constant_(self.eps,1e-4)
+    def forward(self, x,start=0,end=1):
+        """
+        Input Variables:
+        ----------------
+            x: Input tensor of shape [NxCxHxW]
+        """
+        n, c, h, w = x.shape
+        assert (self.gamma.shape[1],
+                self.beta.shape[1], self.tau.shape[1]) == (c, c, c)
+        # print('limit shape',self.limit.shape)
+        # print(self.limit)
+        # print("tau shape",self.tau)
+        # print(self.tau)
+        A = x.pow(2).mean(dim=(2, 3), keepdim=True)
+        # alpha = 1
+        A = torch.max(self.limit, A + torch.abs(self.eps))
+
+        x = x / torch.sqrt(A + 1e-6)
+        x = torch.max(self.gamma * x + self.beta, self.tau)
+        return x
+
+
+class OldFilterResponseNormalization(nn.Module):
+    def __init__(self, num_features, eps=1e-6):
+        """
+        Input Variables:
+        ----------------
+            beta, gamma, tau: Variables of shape [1, C, 1, 1].
+            eps: A scalar constant or learnable variable.
+        """
+
+        super(OldFilterResponseNormalization, self).__init__()
+        self.beta = nn.parameter.Parameter(
+             torch.Tensor(1, num_features, 1, 1), requires_grad=True)
+        self.gamma = nn.parameter.Parameter(
+             torch.Tensor(1, num_features, 1, 1), requires_grad=True)
+        self.tau = nn.parameter.Parameter(
+             torch.Tensor(1, num_features, 1, 1), requires_grad=True)
+        self.eps = nn.parameter.Parameter(
+             torch.Tensor(1, num_features, 1, 1), requires_grad=True)
+        self.reset_parameters()
+    def reset_parameters(self):
+        nn.init.ones_(self.gamma)
+        nn.init.zeros_(self.beta)
+        nn.init.zeros_(self.tau)
+        nn.init.constant_(self.eps, 1e-4)
     def forward(self, x):
         """
         Input Variables:
@@ -96,17 +158,63 @@ class MaxMinFRN(nn.Module):
         """
 
         n, c, h, w = x.shape
-        assert (self.gamma.shape[1], self.beta.shape[1], self.tau.shape[1]) == (c, c, c)
+        assert (self.gamma.shape[1],
+                self.beta.shape[1], self.tau.shape[1]) == (c, c, c)
+        A = x.pow(2).mean(dim=(2, 3), keepdim=True)
+        x = x / torch.sqrt(A + 1e-6 + torch.abs(self.eps))
+        x = torch.max(self.gamma * x + self.beta, self.tau)
+        return x
 
-        # Compute the max of activations per channel
-        channel_max = torch.max(torch.max(x,dim=2,keepdim=True)[0],dim=3,keepdim=True)[0]
-        channel_min = torch.min(torch.min(x,dim=2,keepdim=True)[0],dim=3,keepdim=True)[0]
+class NewBatchNorm2d(nn.Module):
+    def __init__(self, num_features, eps=1e-05, momentum=0.9, affine=True):
+        """
+        Input Variables:
+        ----------------
+            beta, gamma, tau: Variables of shape [1, C, 1, 1].
+            eps: A scalar constant or learnable variable.
+        """
 
-        Cn = torch.log(torch.tensor(h * w + 0.000001)) * 2
-        sigma = (channel_max - channel_min).pow(2)/Cn
-        mu = (channel_min + channel_max).pow(2)/4
-        nu2 = sigma + mu
-        # Perform FRN
-        x = x * torch.rsqrt(nu2 + 1e-6 + torch.abs(self.eps))
-        # Return after applying the Offset-ReLU non-linearity
-        return torch.max(self.gamma*x + self.beta, self.tau)
+        super(NewBatchNorm2d, self).__init__()
+        self.affine = affine
+        if self.affine:
+            self.beta = nn.parameter.Parameter(
+                torch.Tensor(1, num_features, 1, 1), requires_grad=True)
+            self.gamma = nn.parameter.Parameter(
+                torch.Tensor(1, num_features, 1, 1), requires_grad=True)
+        else:
+            self.beta = nn.parameter.Parameter(
+                torch.Tensor(1, num_features, 1, 1), requires_grad=False)
+            self.gamma = nn.parameter.Parameter(
+                torch.Tensor(1, num_features, 1, 1), requires_grad=False)
+        self.eps = eps
+        self.running_mean = torch.zeros(1, num_features, 1, 1)
+        self.running_var = torch.ones(1, num_features, 1, 1)
+        # self.running_var = torch.Tensor(1, num_features, 1, 1)
+        self.limit = nn.parameter.Parameter(
+                torch.Tensor(1, num_features, 1, 1), requires_grad=True)
+
+        self.momentum = momentum
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        nn.init.ones_(self.gamma)
+        nn.init.zeros_(self.beta)
+        nn.init.ones_(self.running_var)
+        nn.init.constant_(self.limit,0.1)
+
+    def forward(self, x):
+
+        if self.training:
+            mean = x.mean(dim=(0, 2, 3), keepdim=True).to(x.device)
+            var = (x - mean).pow(2).mean(dim=(0, 2, 3), keepdim=True).to(x.device)
+            self.running_var = (self.momentum) * self.running_var + (1 - self.momentum) * var
+            # var = torch.max(self.limit,var)
+            x = self.gamma * (x - mean) / torch.sqrt(var + self.eps) + self.beta
+            # self.running_var = (self.momentum) * self.running_var + (1 - self.momentum) * var
+
+            self.running_mean = (self.momentum) * self.running_mean + (1-self.momentum) * mean
+        else:
+
+            x = self.gamma * (x - self.running_mean) / (torch.sqrt(self.running_var +
+                                                                   self.eps)) + self.beta
+        return x
