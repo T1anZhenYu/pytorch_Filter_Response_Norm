@@ -407,10 +407,11 @@ def adjust_learning_rate(optimizer, epoch):
         for param_group in optimizer.param_groups:
             param_group['lr'] = lr
     else:
-        print('in linear decay')
+
         if epoch <= args.ramp_up:
             lr = lr_min + 0.5*(args.lr_max - lr_min)*(1 - math.cos(epoch/(args.ramp_up+1)*math.pi))
             state['lr'] = lr
+            print("lr:",state['lr'])
         elif epoch in args.schedule:
             state['lr'] *= args.gamma
             for param_group in optimizer.param_groups:
