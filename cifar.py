@@ -42,6 +42,8 @@ parser.add_argument('--train-batch', default=32, type=int, metavar='N',
                     help='train batchsize')
 parser.add_argument('--test-batch', default=100, type=int, metavar='N',
                     help='test batchsize')
+parser.add_argument('--lr', default=0.1, type=float,
+                    help='lr')
 parser.add_argument('--lr_max', default=0.1, type=float,
                     help='maximum lr')
 parser.add_argument('--lr_min', default=0.000001, type=float,
