@@ -414,8 +414,8 @@ def adjust_learning_rate(optimizer, epoch):
             print("lr:",state['lr'])
         elif epoch in args.schedule:
             state['lr'] *= args.gamma
-            for param_group in optimizer.param_groups:
-                param_group['lr'] = state['lr']
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = state['lr']
         else:
             for param_group in optimizer.param_groups:
                  state['lr'] = param_group['lr']
