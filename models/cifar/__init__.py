@@ -11,3 +11,4 @@ from .inception_newfrn import *
 from .vgg_noalpha import *
 from .vgg_newbn import *
 from .resnet_newbn import *
+from .resnet_noalphafrn import *

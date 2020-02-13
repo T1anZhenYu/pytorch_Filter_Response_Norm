@@ -155,6 +155,12 @@ def main():
                     depth=args.depth,
                     block_name=args.block_name,
                 )
+    elif args.arch.endswith('resnet_noalpha'):
+        model = models.__dict__[args.arch](
+                    num_classes=num_classes,
+                    depth=args.depth,
+                    block_name=args.block_name,
+                )
     elif args.arch.endswith('resnet_oldfrn'):
         model = models.__dict__[args.arch](
                     num_classes=num_classes,
