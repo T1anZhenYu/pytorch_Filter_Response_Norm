@@ -97,6 +97,7 @@ class noalpha(nn.Module):
              torch.Tensor(1, num_features, 1, 1), requires_grad=True)
         self.eps = nn.parameter.Parameter(
              torch.Tensor(1, num_features, 1, 1), requires_grad=True)
+        self.total = 0
         self.reset_parameters()
     def reset_parameters(self):
         nn.init.ones_(self.gamma)
@@ -115,7 +116,15 @@ class noalpha(nn.Module):
                 self.beta.shape[1], self.tau.shape[1]) == (c, c, c)
 
         A = x.pow(2).mean(dim=(2, 3), keepdim=True)
+        self.total = self.total + 1
+        if h == 32 and self.total %300 == 1 and self.training:
+            print("saving")
 
+            dic = {}
+            dic['eps']=self.limit.cpu().detach().numpy()
+            dic['var']=A.cpu().detach().numpy()
+            dic['alpha*var']=(A).cpu().detach().numpy()
+            np.savez("./npz/"+str(self.total)+"tempiter",**dic)
         A = torch.max(self.limit, A + torch.abs(self.eps))
 
         x = x / torch.sqrt(A + 1e-6)
