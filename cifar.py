@@ -420,6 +420,7 @@ def adjust_learning_rate(optimizer, epoch):
                 param_group['lr'] = state['lr']
         elif epoch > args.schedule[0] and state['lr'] == 0.1:
             for param_group in optimizer.param_groups:
+                print(param_group)
                 state['lr'] = param_group['lr']
 
 if __name__ == '__main__':
