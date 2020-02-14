@@ -407,9 +407,11 @@ def adjust_learning_rate(optimizer, epoch):
         state['lr'] = lr
 
         for param_group in optimizer.param_groups:
-
+            print(param_group)
+            print()
+            print()
             param_group['lr'] = lr
-        print(optimizer.param_groups[0])
+
 
     else:
 
