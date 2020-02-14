@@ -194,7 +194,14 @@ def main():
     cudnn.benchmark = True
     print('    Total params: %.2fM' % (sum(p.numel() for p in model.parameters())/1000000.0))
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(model.parameters(), lr=args.lr_min, momentum=args.momentum, weight_decay=args.weight_decay)
+    model_param = []
+    for name, params in model.module.named_parameters():
+        print("name:", name)
+        if 'limit' in name:
+            model_param += [{'params':[params],'lr':0.0058,'weight_decay':args.weight_decay}]
+        else:
+            model_param += [{'params':[params]}]
+    optimizer = optim.SGD(model_param, lr=args.lr_min, momentum=args.momentum, weight_decay=args.weight_decay)
 
     # Resume
     title = 'cifar-10-' + args.arch
@@ -226,10 +233,8 @@ def main():
     for epoch in range(start_epoch, args.epochs):
         setting.temp_epoch = epoch
         adjust_learning_rate(optimizer, epoch)
-        for name, params in model.module.named_parameters():
-            print("name:",name)
-        print('optimizer state dict')
-        print(optimizer.state_dict())
+
+
         print('\nEpoch: [%d | %d] LR: %f' % (epoch + 1, args.epochs, state['lr']))
 
         train_loss, train_acc = train(trainloader, model, criterion, optimizer, epoch,
@@ -410,7 +415,11 @@ def adjust_learning_rate(optimizer, epoch):
         state['lr'] = lr
 
         for param_group in optimizer.param_groups:
-            param_group['lr'] = lr
+            if param_group['lr'] != 0.0058:
+                param_group['lr'] = state['lr']
+            elif param_group['lr'] == 0.0058 :
+                print("limit lr")
+                # param_group['lr'] = state['lr']
     else:
 
         if epoch <= args.ramp_up:
@@ -420,12 +429,19 @@ def adjust_learning_rate(optimizer, epoch):
         elif epoch in args.schedule:
             state['lr'] *= args.gamma
             for param_group in optimizer.param_groups:
+                if param_group['lr'] != 0.0058:
+                    param_group['lr'] = state['lr']
+                elif param_group['lr'] == 0.0058:
+                    print("limit lr")
+                    # param_group['lr'] = state['lr']
 
-                param_group['lr'] = state['lr']
         elif epoch > args.schedule[0] and state['lr'] == 0.1:
             for param_group in optimizer.param_groups:
-
-                state['lr'] = param_group['lr']
+                if param_group['lr'] != 0.0058:
+                    param_group['lr'] = state['lr']
+                elif param_group['lr'] == 0.0058:
+                    print("limit lr")
+                    # param_group['lr'] = state['lr']
 
 if __name__ == '__main__':
     main()
