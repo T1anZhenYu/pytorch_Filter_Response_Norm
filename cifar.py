@@ -228,7 +228,8 @@ def main():
         adjust_learning_rate(optimizer, epoch)
         for name, params in model.module.named_parameters():
             print("name:",name)
-            print('params:',params)
+        print('optimizer state dict')
+        print(optimizer.state_dict())
         print('\nEpoch: [%d | %d] LR: %f' % (epoch + 1, args.epochs, state['lr']))
 
         train_loss, train_acc = train(trainloader, model, criterion, optimizer, epoch,
