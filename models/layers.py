@@ -52,7 +52,7 @@ class NewFilterResponseNormalization(nn.Module):
         nn.init.ones_(self.gamma)
         nn.init.zeros_(self.beta)
         nn.init.zeros_(self.tau)
-        nn.init.constant_(self.limit,0.1)
+        nn.init.constant_(self.limit,0.5)
         nn.init.constant_(self.eps,1e-4)
     def forward(self, x,start=0,end=1):
         """
@@ -103,7 +103,7 @@ class noalpha(nn.Module):
         nn.init.ones_(self.gamma)
         nn.init.zeros_(self.beta)
         nn.init.zeros_(self.tau)
-        nn.init.constant_(self.limit,1)
+        nn.init.constant_(self.limit,0.5)
         nn.init.constant_(self.eps,1e-4)
     def forward(self, x,start=0,end=1):
         """
