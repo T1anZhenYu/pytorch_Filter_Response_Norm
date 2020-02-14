@@ -196,11 +196,8 @@ def main():
     criterion = nn.CrossEntropyLoss()
     model_param = []
     for name, params in model.module.named_parameters():
-        print("name:", name)
-        if 'limit' in name:
-            model_param += [{'params':[params],'lr':0.0018,'weight_decay':args.weight_decay}]
-        else:
-            model_param += [{'params':[params]}]
+        # print("name:", name)
+        model_param += [{'params':[params]}]
     optimizer = optim.SGD(model_param, lr=args.lr_min, momentum=args.momentum, weight_decay=args.weight_decay)
 
     # Resume
@@ -415,11 +412,7 @@ def adjust_learning_rate(optimizer, epoch):
         state['lr'] = lr
 
         for param_group in optimizer.param_groups:
-            if param_group['lr'] != 0.0018:
-                param_group['lr'] = state['lr']
-            elif param_group['lr'] == 0.0018 :
-                print("limit lr")
-                # param_group['lr'] = state['lr']
+            param_group['lr'] = state['lr']
     else:
 
         if epoch <= args.ramp_up:
@@ -429,19 +422,12 @@ def adjust_learning_rate(optimizer, epoch):
         elif epoch in args.schedule:
             state['lr'] *= args.gamma
             for param_group in optimizer.param_groups:
-                if param_group['lr'] != 0.0018:
-                    param_group['lr'] = state['lr']
-                elif param_group['lr'] == 0.0018:
-                    print("limit lr")
-                    # param_group['lr'] = state['lr']
+                param_group['lr'] = state['lr']
+
 
         elif epoch > args.schedule[0] and state['lr'] == 0.1:
             for param_group in optimizer.param_groups:
-                if param_group['lr'] != 0.0018:
-                    param_group['lr'] = state['lr']
-                elif param_group['lr'] == 0.0018:
-                    print("limit lr")
-                    # param_group['lr'] = state['lr']
+                param_group['lr'] = state['lr']
 
 if __name__ == '__main__':
     main()
