@@ -226,7 +226,8 @@ def main():
     for epoch in range(start_epoch, args.epochs):
         setting.temp_epoch = epoch
         adjust_learning_rate(optimizer, epoch)
-
+        for name, params in model.module.named_parameters():
+            print("name:",name)
         print('\nEpoch: [%d | %d] LR: %f' % (epoch + 1, args.epochs, state['lr']))
 
         train_loss, train_acc = train(trainloader, model, criterion, optimizer, epoch,
@@ -407,12 +408,7 @@ def adjust_learning_rate(optimizer, epoch):
         state['lr'] = lr
 
         for param_group in optimizer.param_groups:
-            print(param_group)
-            print()
-            print()
             param_group['lr'] = lr
-
-
     else:
 
         if epoch <= args.ramp_up:
@@ -422,11 +418,11 @@ def adjust_learning_rate(optimizer, epoch):
         elif epoch in args.schedule:
             state['lr'] *= args.gamma
             for param_group in optimizer.param_groups:
-                print(param_group)
+
                 param_group['lr'] = state['lr']
         elif epoch > args.schedule[0] and state['lr'] == 0.1:
             for param_group in optimizer.param_groups:
-                print(param_group)
+
                 state['lr'] = param_group['lr']
 
 if __name__ == '__main__':
