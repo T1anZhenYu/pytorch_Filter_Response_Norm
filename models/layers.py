@@ -211,10 +211,12 @@ class NewBatchNorm2d(nn.Module):
     def forward(self, x):
         self.running_var.to(x.device)
         self.running_mean.to(x.device)
-        self.momentum.to(x.device)
+
         if self.training:
             mean = x.mean(dim=(0, 2, 3), keepdim=True).to(x.device)
             var = (x - mean).pow(2).mean(dim=(0, 2, 3), keepdim=True).to(x.device)
+            print("mean device:",mean.device)
+            print("runing device:",self.running_mean.device)
             self.running_mean = (self.momentum) * self.running_mean + (1-self.momentum) * mean
 
             self.running_var = (self.momentum) * self.running_var + (1 - self.momentum) * var
