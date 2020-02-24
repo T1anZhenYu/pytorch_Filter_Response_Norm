@@ -206,7 +206,7 @@ class NewBatchNorm2d(nn.Module):
         nn.init.ones_(self.gamma)
         nn.init.zeros_(self.beta)
         nn.init.ones_(self.running_var)
-        nn.init.constant_(self.limit,0.1)
+        nn.init.constant_(self.limit,1)
 
     def forward(self, x):
         self.running_var = self.running_var.to(x.device)
