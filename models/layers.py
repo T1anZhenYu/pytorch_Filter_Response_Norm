@@ -229,3 +229,62 @@ class NewBatchNorm2d(nn.Module):
             x = self.gamma * (x - self.running_mean) / (torch.sqrt(var +
                                                                    self.eps)) + self.beta
         return x
+
+class OldBatchNorm2d(nn.Module):
+    def __init__(self, num_features, eps=1e-05, momentum=0.9, affine=True):
+        """
+        Input Variables:
+        ----------------
+            beta, gamma, tau: Variables of shape [1, C, 1, 1].
+            eps: A scalar constant or learnable variable.
+        """
+
+        super(OldBatchNorm2d, self).__init__()
+        self.affine = affine
+        if self.affine:
+            self.beta = nn.parameter.Parameter(
+                torch.Tensor(1, num_features, 1, 1), requires_grad=True)
+            self.gamma = nn.parameter.Parameter(
+                torch.Tensor(1, num_features, 1, 1), requires_grad=True)
+        else:
+            self.beta = nn.parameter.Parameter(
+                torch.Tensor(1, num_features, 1, 1), requires_grad=False)
+            self.gamma = nn.parameter.Parameter(
+                torch.Tensor(1, num_features, 1, 1), requires_grad=False)
+        self.eps = eps
+        self.running_mean = torch.zeros(1, num_features, 1, 1)
+        self.running_var = torch.ones(1, num_features, 1, 1)
+        # self.running_var = torch.Tensor(1, num_features, 1, 1)
+        self.limit = nn.parameter.Parameter(
+                torch.Tensor(1, num_features, 1, 1), requires_grad=True)
+
+        self.momentum = momentum
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        nn.init.ones_(self.gamma)
+        nn.init.zeros_(self.beta)
+        nn.init.ones_(self.running_var)
+        nn.init.constant_(self.limit,0.1)
+
+    def forward(self, x):
+        self.running_var = self.running_var.to(x.device)
+        self.running_mean= self.running_mean.to(x.device)
+
+        if self.training:
+            mean = x.mean(dim=(0, 2, 3), keepdim=True).to(x.device)
+            var = (x - mean).pow(2).mean(dim=(0, 2, 3), keepdim=True).to(x.device)
+            # print("mean device:",mean.device)
+            # print("runing device:",self.running_mean.device)
+            self.running_mean = (self.momentum) * self.running_mean + (1-self.momentum) * mean
+
+            self.running_var = (self.momentum) * self.running_var + (1 - self.momentum) * var
+            # var = torch.max(self.limit,var)
+            x = self.gamma * (x - mean) / torch.sqrt(var + self.eps) + self.beta
+            # self.running_var = (self.momentum) * self.running_var + (1 - self.momentum) * var
+
+        else:
+            # var = torch.max(self.limit,self.running_var)
+            x = self.gamma * (x - self.running_mean) / (torch.sqrt(self.running_var +
+                                                                   self.eps)) + self.beta
+        return x
