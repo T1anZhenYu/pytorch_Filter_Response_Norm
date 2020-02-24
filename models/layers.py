@@ -209,8 +209,9 @@ class NewBatchNorm2d(nn.Module):
         nn.init.constant_(self.limit,0.1)
 
     def forward(self, x):
-        self.running_var.cuda()
-        self.running_mean.cuda()
+        self.running_var.to(x.device)
+        self.running_mean.to(x.device)
+        self.momentum.to(x.device)
         if self.training:
             mean = x.mean(dim=(0, 2, 3), keepdim=True).to(x.device)
             var = (x - mean).pow(2).mean(dim=(0, 2, 3), keepdim=True).to(x.device)
