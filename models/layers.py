@@ -103,7 +103,7 @@ class noalpha(nn.Module):
         nn.init.ones_(self.gamma)
         nn.init.zeros_(self.beta)
         nn.init.zeros_(self.tau)
-        nn.init.constant_(self.limit,5)
+        nn.init.constant_(self.limit,0.5)
         nn.init.constant_(self.eps,1e-4)
     def forward(self, x,start=0,end=1):
         """
@@ -207,7 +207,7 @@ class NewBatchNorm2d(nn.Module):
         nn.init.ones_(self.gamma)
         nn.init.zeros_(self.beta)
         nn.init.ones_(self.running_var)
-        nn.init.constant_(self.limit,0.5)
+        nn.init.constant_(self.limit,5)
 
     def forward(self, x):
         n, c, h, w = x.shape
@@ -223,15 +223,15 @@ class NewBatchNorm2d(nn.Module):
 
             self.running_var = (self.momentum) * self.running_var + (1 - self.momentum) * var
 
-            self.total = self.total + 1
-            if h == 32 and self.total %300 == 1 and self.training:
-                print("saving")
-
-                dic = {}
-                dic['eps']=self.limit.cpu().detach().numpy()
-                dic['var']=var.cpu().detach().numpy()
-
-                np.savez("./npz/"+str(self.total)+"tempiter",**dic)
+            # self.total = self.total + 1
+            # if h == 32 and self.total %300 == 1 and self.training:
+            #     print("saving")
+            #
+            #     dic = {}
+            #     dic['eps']=self.limit.cpu().detach().numpy()
+            #     dic['var']=var.cpu().detach().numpy()
+            #
+            #     np.savez("./npz/"+str(self.total)+"tempiter",**dic)
             var = torch.max(self.limit,var)
 
             x = self.gamma * (x - mean) / torch.sqrt(var + self.eps) + self.beta
