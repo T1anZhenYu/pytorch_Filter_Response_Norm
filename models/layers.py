@@ -193,6 +193,7 @@ class NewBatchNorm2d(nn.Module):
             self.gamma = nn.parameter.Parameter(
                 torch.Tensor(1, num_features, 1, 1), requires_grad=False)
         self.eps = eps
+        self.total = 0
         self.running_mean = torch.zeros(1, num_features, 1, 1)
         self.running_var = torch.ones(1, num_features, 1, 1)
         # self.running_var = torch.Tensor(1, num_features, 1, 1)
@@ -209,6 +210,7 @@ class NewBatchNorm2d(nn.Module):
         nn.init.constant_(self.limit,0.5)
 
     def forward(self, x):
+        n, c, h, w = x.shape
         self.running_var = self.running_var.to(x.device)
         self.running_mean= self.running_mean.to(x.device)
 
@@ -220,7 +222,18 @@ class NewBatchNorm2d(nn.Module):
             self.running_mean = (self.momentum) * self.running_mean + (1-self.momentum) * mean
 
             self.running_var = (self.momentum) * self.running_var + (1 - self.momentum) * var
+
+            self.total = self.total + 1
+            if h == 32 and self.total %300 == 1 and self.training:
+                print("saving")
+
+                dic = {}
+                dic['eps']=self.limit.cpu().detach().numpy()
+                dic['var']=var.cpu().detach().numpy()
+
+                np.savez("./npz/"+str(self.total)+"tempiter",**dic)
             var = torch.max(self.limit,var)
+
             x = self.gamma * (x - mean) / torch.sqrt(var + self.eps) + self.beta
             # self.running_var = (self.momentum) * self.running_var + (1 - self.momentum) * var
 
