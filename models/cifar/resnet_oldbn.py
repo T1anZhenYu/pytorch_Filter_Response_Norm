@@ -9,7 +9,7 @@ https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py
 '''
 import torch.nn as nn
 import math
-from ..layers import OldBatchNorm2d
+from ..layers import *
 
 __all__ = ['resnet_oldbn']
 
@@ -34,10 +34,10 @@ class Bottleneck(nn.Module):
         self.relu = nn.ReLU(inplace=True)
         self.downsample = downsample
         self.stride = stride
-        self.frn1 = OldBatchNorm2d(planes)
-        self.frn2 = OldBatchNorm2d(planes)
-        self.frn3 = OldBatchNorm2d(planes * 4)
-        self.frn4 = OldBatchNorm2d(planes * 4)
+        self.frn1 = nn.BatchNorm2d(planes)
+        self.frn2 = nn.BatchNorm2d(planes)
+        self.frn3 = nn.BatchNorm2d(planes * 4)
+        self.frn4 = nn.BatchNorm2d(planes * 4)
 
     def forward(self, x):
         residual = x
@@ -77,11 +77,11 @@ class BasicBlock(nn.Module):
         self.downsample = downsample
         self.stride = stride
 
-        self.frn1 = OldBatchNorm2d(planes)
+        self.frn1 = nn.BatchNorm2d(planes)
         # self.tlu1 = TLU(planes)
 
-        self.frn2 = OldBatchNorm2d(planes)
-        self.frn3 = OldBatchNorm2d(planes)
+        self.frn2 = nn.BatchNorm2d(planes)
+        self.frn3 = nn.BatchNorm2d(planes)
         # self.tlu2 = TLU(planes)
 
 
@@ -123,7 +123,7 @@ class ResNet_BN(nn.Module):
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding=1,
                                bias=False)
         # self.bn1 = nn.BatchNorm2d(16)
-        self.frn1 = OldBatchNorm2d(16)
+        self.frn1 = nn.BatchNorm2d(16)
         # self.tlu1 = TLU(16)
 
         self.relu = nn.ReLU(inplace=True)
@@ -137,7 +137,7 @@ class ResNet_BN(nn.Module):
             if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
                 m.weight.data.normal_(0, math.sqrt(2. / n))
-            elif isinstance(m, OldBatchNorm2d):
+            elif isinstance(m, nn.BatchNorm2d):
                 m.gamma.data.fill_(1)
                 m.beta.data.zero_()
 
@@ -147,7 +147,7 @@ class ResNet_BN(nn.Module):
             downsample = nn.Sequential(
                 nn.Conv2d(self.inplanes, planes * block.expansion,
                           kernel_size=1, stride=stride, bias=False),
-                # OldBatchNorm2d(planes * block.expansion),
+                # nn.BatchNorm2d(planes * block.expansion),
             )
 
         layers = []
