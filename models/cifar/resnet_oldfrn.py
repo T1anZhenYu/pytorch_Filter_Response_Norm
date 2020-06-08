@@ -11,7 +11,7 @@ import torch.nn as nn
 import math
 from ..layers import OldFilterResponseNormalization
 
-__all__ = ['resnet_oldfrn']
+__all__ = ['oldfrn_resnet']
 
 
 def conv3x3(in_planes, out_planes, stride=1):
@@ -180,8 +180,9 @@ class ResNet_Frn(nn.Module):
         return x
 
 
-def resnet_oldfrn(**kwargs):
+def oldfrn_resnet(**kwargs):
     """
     Constructs a ResNet model.
     """
+    print("oldfrn_resnet")
     return ResNet_Frn(**kwargs)

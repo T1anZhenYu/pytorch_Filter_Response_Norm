@@ -11,7 +11,7 @@ import torch.nn as nn
 import math
 from ..layers import *
 
-__all__ = ['resnet_oldbn']
+__all__ = ['oldbn_resnet']
 
 
 def conv3x3(in_planes, out_planes, stride=1):
@@ -178,8 +178,9 @@ class ResNet_BN(nn.Module):
         return x
 
 
-def resnet_oldbn(**kwargs):
+def oldbn_resnet(**kwargs):
     """
     Constructs a ResNet model.
     """
+    print("in oldbn_resnet")
     return ResNet_BN(**kwargs)

@@ -171,78 +171,6 @@ class OldFilterResponseNormalization(nn.Module):
         x = torch.max(self.gamma * x + self.beta, self.tau)
         return x
 
-class NewBatchNorm2d(nn.Module):
-    def __init__(self, num_features, eps=1e-05, momentum=0.9, affine=True):
-        """
-        Input Variables:
-        ----------------
-            beta, gamma, tau: Variables of shape [1, C, 1, 1].
-            eps: A scalar constant or learnable variable.
-        """
-
-        super(NewBatchNorm2d, self).__init__()
-        self.affine = affine
-        if self.affine:
-            self.beta = nn.parameter.Parameter(
-                torch.Tensor(1, num_features, 1, 1), requires_grad=True)
-            self.gamma = nn.parameter.Parameter(
-                torch.Tensor(1, num_features, 1, 1), requires_grad=True)
-        else:
-            self.beta = nn.parameter.Parameter(
-                torch.Tensor(1, num_features, 1, 1), requires_grad=False)
-            self.gamma = nn.parameter.Parameter(
-                torch.Tensor(1, num_features, 1, 1), requires_grad=False)
-        self.eps = eps
-        self.total = 0
-        self.running_mean = torch.zeros(1, num_features, 1, 1)
-        self.running_var = torch.ones(1, num_features, 1, 1)
-        # self.running_var = torch.Tensor(1, num_features, 1, 1)
-        self.limit = nn.parameter.Parameter(
-                torch.Tensor(1, num_features, 1, 1), requires_grad=True)
-
-        self.momentum = momentum
-        self.reset_parameters()
-
-    def reset_parameters(self):
-        nn.init.ones_(self.gamma)
-        nn.init.zeros_(self.beta)
-        nn.init.ones_(self.running_var)
-        nn.init.constant_(self.limit,5)
-
-    def forward(self, x):
-        n, c, h, w = x.shape
-        self.running_var = self.running_var.to(x.device)
-        self.running_mean= self.running_mean.to(x.device)
-
-        if self.training:
-            mean = x.mean(dim=(0, 2, 3), keepdim=True).to(x.device)
-            var = (x - mean).pow(2).mean(dim=(0, 2, 3), keepdim=True).to(x.device)
-            # print("mean device:",mean.device)
-            # print("runing device:",self.running_mean.device)
-            self.running_mean = (self.momentum) * self.running_mean + (1-self.momentum) * mean
-
-            self.running_var = (self.momentum) * self.running_var + (1 - self.momentum) * var
-
-            # self.total = self.total + 1
-            # if h == 32 and self.total %300 == 1 and self.training:
-            #     print("saving")
-            #
-            #     dic = {}
-            #     dic['eps']=self.limit.cpu().detach().numpy()
-            #     dic['var']=var.cpu().detach().numpy()
-            #
-            #     np.savez("./npz/"+str(self.total)+"tempiter",**dic)
-            var = torch.max(self.limit,var)
-
-            x = self.gamma * (x - mean) / torch.sqrt(var + self.eps) + self.beta
-            # self.running_var = (self.momentum) * self.running_var + (1 - self.momentum) * var
-
-        else:
-            var = torch.max(self.limit,self.running_var)
-            x = self.gamma * (x - self.running_mean) / (torch.sqrt(var +
-                                                                   self.eps)) + self.beta
-        return x
-
 class OldBatchNorm2d(nn.Module):
     def __init__(self, num_features, eps=1e-05, momentum=0.9, affine=True):
         """
@@ -301,3 +229,60 @@ class OldBatchNorm2d(nn.Module):
             x = self.gamma * (x - self.running_mean) / (torch.sqrt(self.running_var +
                                                                    self.eps)) + self.beta
         return x
+class DetachVarKeepMaxMinGrad(nn.BatchNorm2d):
+    def __init__(self, num_features, eps=0.01, momentum=0.1,
+                 affine=True, track_running_stats=True):
+        super(DetachVarKeepMaxMinGrad, self).__init__(
+            num_features, eps, momentum, affine, track_running_stats)
+        self.total = 1
+
+    def forward(self, input):
+        self._check_input_dim(input)
+
+        exponential_average_factor = 0.0
+
+        if self.training and self.track_running_stats:
+            if self.num_batches_tracked is not None:
+                self.num_batches_tracked += 1
+                if self.momentum is None:  # use cumulative moving average
+                    exponential_average_factor = 1.0 / float(self.num_batches_tracked)
+                else:  # use exponential moving average
+                    exponential_average_factor = self.momentum
+
+        # calculate running estimates
+        if self.training:
+            mean = input.mean(dim=(0, 2, 3), keepdim=True)
+
+            channelMax = \
+            torch.max(torch.max(torch.max(input, 0, keepdim=True)[0], 2, keepdim=True)[0], 3, keepdim=True)[0]
+            channelMin = \
+            torch.min(torch.min(torch.min(input, 0, keepdim=True)[0], 2, keepdim=True)[0], 3, keepdim=True)[0]
+
+            A = (input >= channelMax).float()
+            # print("A:")
+            # print(A)
+            B = (input <= channelMin).float()
+            Mask = A + B
+            n = torch.tensor(input.numel() / (input.size(1)))
+            input_ = input * Mask + (input * (1 - Mask)).detach()
+
+            var = (input_ - mean).pow(2).mean(dim=(0, 2, 3), keepdim=True)
+            # var = torch.clamp(var,min=0.05,max=4)
+            mean = mean.squeeze()
+            var = var.squeeze()
+
+            with torch.no_grad():
+
+                # update running_var with unbiased var
+                self.running_var = exponential_average_factor * var * n / (n - 1) \
+                                   + (1 - exponential_average_factor) * self.running_var
+
+            input = (input- mean[None, :, None, None]) / (torch.sqrt(var[None, :, None, None] + self.eps))
+        else:
+            mean = self.running_mean
+            var = self.running_var
+            input = (input - mean[None, :, None, None]) / (torch.sqrt(var[None, :, None, None] + self.eps))
+
+        if self.affine:
+            input = input * self.weight[None, :, None, None] + self.bias[None, :, None, None]
+        return input

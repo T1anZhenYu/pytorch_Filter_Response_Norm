@@ -151,43 +151,7 @@ def main():
                     depth=args.depth,
                     block_name=args.block_name,
                 )
-    elif args.arch.endswith('resnet_newfrn'):
-        model = models.__dict__[args.arch](
-                    num_classes=num_classes,
-                    depth=args.depth,
-                    block_name=args.block_name,
-                )
-    elif args.arch.endswith('resnet_noalpha'):
-        model = models.__dict__[args.arch](
-                    num_classes=num_classes,
-                    depth=args.depth,
-                    block_name=args.block_name,
-                )
-    elif args.arch.endswith('resnet_oldfrn'):
-        model = models.__dict__[args.arch](
-                    num_classes=num_classes,
-                    depth=args.depth,
-                    block_name=args.block_name,
-                )
-    elif args.arch.endswith('resnet_newbn'):
-        model = models.__dict__[args.arch](
-                    num_classes=num_classes,
-                    depth=args.depth,
-                    block_name=args.block_name,
-                )
-    elif args.arch.endswith('inceptionv3'):
-        model = models.__dict__[args.arch](
-                    num_classes=num_classes,
-                )
-    elif args.arch.endswith('inceptionv3_frn'):
-        model = models.__dict__[args.arch](
-                    num_classes=num_classes,
-                )
-    elif args.arch.endswith('inceptionv3_newfrn'):
-        model = models.__dict__[args.arch](
-                    num_classes=num_classes,
-                )
-    elif args.arch.endswith('resnet_oldbn'):
+    elif args.arch.endswith('resnet'):
         model = models.__dict__[args.arch](
                     num_classes=num_classes,
                     depth=args.depth,
