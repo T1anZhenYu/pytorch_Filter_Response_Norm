@@ -272,12 +272,13 @@ class DetachVarKeepMaxMinGrad(nn.BatchNorm2d):
             var = var.squeeze()
 
             with torch.no_grad():
-
+                self.running_mean = exponential_average_factor * mean  \
+                                   + (1 - exponential_average_factor) * self.running_mean
                 # update running_var with unbiased var
                 self.running_var = exponential_average_factor * var * n / (n - 1) \
                                    + (1 - exponential_average_factor) * self.running_var
 
-            input = (input- mean[None, :, None, None]) / (torch.sqrt(var[None, :, None, None] + self.eps))
+            input = (input- mean[None, :, None, None]) / (torch.sqrt(var[None, :, None, None] + self.eps)).detach()
         else:
             mean = self.running_mean
             var = self.running_var
