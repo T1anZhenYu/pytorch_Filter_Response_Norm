@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 '''Resnet for cifar dataset.
-Ported formDeployment
+Ported form
 https://github.com/facebook/fb.resnet.torch
 and
 https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py
@@ -11,7 +11,7 @@ import torch.nn as nn
 import math
 from ..layers import DetachVarKeepMaxMinGrad
 
-__all__ = ['detachVarKeepGrad_resnet']
+__all__ = ['DetachVarKeepMaxMinGrad_resnet']
 
 
 def conv3x3(in_planes, out_planes, stride=1):
@@ -103,10 +103,10 @@ class BasicBlock(nn.Module):
 
         return out
 
-class detachVarKeepGrad(nn.Module):
+class ResNet_Frn(nn.Module):
 
     def __init__(self, depth, num_classes=1000, block_name='BasicBlock'):
-        super(detachVarKeepGrad, self).__init__()
+        super(ResNet_Frn, self).__init__()
         # Model type specifies number of layers for CIFAR-10 model
         if block_name.lower() == 'basicblock':
             assert (depth - 2) % 6 == 0, 'When use basicblock, depth should be 6n+2, e.g. 20, 32, 44, 56, 110, 1202'
@@ -178,9 +178,9 @@ class detachVarKeepGrad(nn.Module):
         return x
 
 
-def detachVarKeepGrad_resnet(**kwargs):
+def DetachVarKeepMaxMinGrad_resnet(**kwargs):
     """
     Constructs a ResNet model.
     """
-    print("in DetachVarKeepMaxMinGrad_resnet")
-    return detachVarKeepGrad(**kwargs)
+    print("in newfrn_resnet")
+    return ResNet_Frn(**kwargs)
