@@ -254,7 +254,7 @@ class BatchNormFunction(torch.autograd.Function):
         # update running_var with unbiased var
         running_var.copy_(momentum * var * n / (n - 1) \
                            + (1 - momentum) * running_var)
-        y = (x - mean[None, :, None, None]) / (torch.sqrt(var[None, :, None, None] + eps))
+        y = (x - mean[None, :, None, None]) / (torch.sqrt(var[None, :, None, None]))
         ctx.eps = eps
         ctx.save_for_backward(y, var, )
         return y
@@ -273,19 +273,19 @@ class BatchNormFunction(torch.autograd.Function):
         gx_ = g - g1 - gy
         # print("g - g1",(g-g1)[:,0,:,:])
         # print("gx_:",gx_[:,0,:,:])
-        gx = 1. / torch.sqrt(var[None, :, None, None] + eps) * (gx_)
+        gx = 1. / torch.sqrt(var[None, :, None, None]) * (gx_)
         # print("gx:",gx[:,0,:,:])
         return gx, None, None,None,None
 
 class GradBatchNorm(nn.BatchNorm2d):
-    def __init__(self, num_features, eps=1e-5, momentum=0.1,
-                 affine=True, track_running_stats=True):
+    def __init__(self, num_features, eps=0.000001, momentum=0.1,
+                 affine=False, track_running_stats=True):
         super(GradBatchNorm, self).__init__(
             num_features, eps, momentum, affine, track_running_stats)
     def forward(self,x):
         self._check_input_dim(x)
 
-        exponential_average_factor = 0.0
+        exponential_average_factor = 0.1
 
         if self.training and self.track_running_stats:
             if self.num_batches_tracked is not None:
@@ -295,7 +295,7 @@ class GradBatchNorm(nn.BatchNorm2d):
                 else:  # use exponential moving average
                     exponential_average_factor = self.momentum
         if self.training:
-            y = BatchNormFunction.apply(x,self.running_mean,self.running_var,self.eps,exponential_average_factor)
+            y = BatchNormFunction.apply(x,self.running_mean,self.running_var,self.eps,self.momentum)
         else:
             mean = self.running_mean
             var = self.running_var
