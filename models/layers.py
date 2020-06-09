@@ -279,7 +279,7 @@ class BatchNormFunction(torch.autograd.Function):
 
 class GradBatchNorm(nn.BatchNorm2d):
     def __init__(self, num_features, eps=0.000001, momentum=0.1,
-                 affine=False, track_running_stats=True):
+                 affine=True, track_running_stats=True):
         super(GradBatchNorm, self).__init__(
             num_features, eps, momentum, affine, track_running_stats)
     def forward(self,x):
