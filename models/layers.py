@@ -240,14 +240,16 @@ class DetachVarKeepMaxMinGrad(nn.BatchNorm2d):
 class BatchNormFunction(torch.autograd.Function):
     @staticmethod
     def forward(ctx, x,running_mean,running_var, eps, momentum):
+        n = x.numel() / (x.size(1))
+
         mean = x.mean(dim=(0, 2, 3), keepdim=True)
         # mean = torch.clamp(mean,min=0,max=4)
         # print('mean size:', mean.size())
         # use biased var in train
-        var = (x - mean).pow(2).mean(dim=(0, 2, 3), keepdim=True)
+
+        var = (x - mean).pow(2).sum(dim=(0, 2, 3))/(n)
         mean = mean.squeeze()
         var = var.squeeze()
-        n = x.numel() / (x.size(1))
 
         running_mean.copy_(momentum * mean\
                             + (1 - momentum) * running_mean)
@@ -255,17 +257,22 @@ class BatchNormFunction(torch.autograd.Function):
         running_var.copy_(momentum * var * n / (n - 1) \
                            + (1 - momentum) * running_var)
         y = (x - mean[None, :, None, None]) / (torch.sqrt(var[None, :, None, None]))
-        ctx.eps = eps
+        ctx.eps = 0.00
         ctx.save_for_backward(y, var, )
         return y
 
     @staticmethod
     def backward(ctx, grad_output):
+        # print("grad dtype")
+        
         eps = ctx.eps
         y, var= ctx.saved_variables
+        n = y.numel()/y.size(1)
+        # print('y dtype',y.dtype)
         g = grad_output
         # print("g:",g[:,0,:,:])
-        gy = (g * y).mean(dim=(0,2,3),keepdim=True)*y
+        gy = (g * y).sum(dim=(0,2,3),keepdim=True)/(n)*y
+        # print("gy dtype",gy.dtype)
         # print("g*y",(g * y).mean(dim=(0,2,3),keepdim=True)[:,0,:,:])
         # print("gy:",gy[:,0,:,:])
         g1 = g.mean(dim=(0,2,3),keepdim=True)
@@ -274,19 +281,20 @@ class BatchNormFunction(torch.autograd.Function):
         # print("g - g1",(g-g1)[:,0,:,:])
         # print("gx_:",gx_[:,0,:,:])
         gx = 1. / torch.sqrt(var[None, :, None, None]) * (gx_)
+        # gx = gx.float()
         # print("gx:",gx[:,0,:,:])
         return gx, None, None,None,None
 
 class GradBatchNorm(nn.BatchNorm2d):
-    def __init__(self, num_features, eps=0.000001, momentum=0.1,
-                 affine=True, track_running_stats=True):
+    def __init__(self, num_features, eps=0.00001, momentum=0.1,
+                 affine=False, track_running_stats=True):
         super(GradBatchNorm, self).__init__(
             num_features, eps, momentum, affine, track_running_stats)
     def forward(self,x):
         self._check_input_dim(x)
 
         exponential_average_factor = 0.1
-
+        x = x.double()
         if self.training and self.track_running_stats:
             if self.num_batches_tracked is not None:
                 self.num_batches_tracked += 1
@@ -302,4 +310,5 @@ class GradBatchNorm(nn.BatchNorm2d):
             y = (x - mean[None, :, None, None]) / (torch.sqrt(var[None, :, None, None] + self.eps))
         if self.affine:
             y = y * self.weight[None, :, None, None] + self.bias[None, :, None, None]
+        y = y.float()
         return y
