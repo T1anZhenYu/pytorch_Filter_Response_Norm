@@ -106,8 +106,6 @@ class BasicBlock(nn.Module):
 class ResNet_Frn(nn.Module):
 
     def __init__(self, depth, num_classes=1000, block_name='BasicBlock'):
-        print("block name")
-        print(block_name)
         super(ResNet_Frn, self).__init__()
         # Model type specifies number of layers for CIFAR-10 model
         if block_name.lower() == 'basicblock':
