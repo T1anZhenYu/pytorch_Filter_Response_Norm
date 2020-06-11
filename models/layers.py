@@ -162,9 +162,10 @@ class OldBatchNorm2d(nn.Module):
         x = x.double()
         n = torch.tensor(x.numel() / (x.size(1)))
         if self.training:
-            mean = x.mean(dim=(0, 2, 3), keepdim=True).to(x.device)
-            var = (x - mean).pow(2).mean(dim=(0, 2, 3), keepdim=True).to(x.device)
+            mean = x.mean(dim=(0, 2, 3), keepdim=True)
+            var = (x - mean).pow(2).mean(dim=(0, 2, 3), keepdim=True)
             # print("mean device:",mean.device)
+            # print("running mean device:",self.running_mean.device)
             # print("runing device:",self.running_mean.device)
             with torch.no_grad():
                 self.running_mean = self.momentum * mean  \

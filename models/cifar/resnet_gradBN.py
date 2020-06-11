@@ -9,7 +9,7 @@ https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py
 '''
 import torch.nn as nn
 import math
-from ..layer3 import *
+from ..layers import *
 
 __all__ = ['gradbn_resnet']
 
