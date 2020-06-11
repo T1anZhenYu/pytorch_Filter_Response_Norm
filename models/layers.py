@@ -157,8 +157,8 @@ class OldBatchNorm2d(nn.Module):
         nn.init.constant_(self.limit,0.1)
 
     def forward(self, x):
-        self.running_var = self.running_var.to(x.device)
-        self.running_mean= self.running_mean.to(x.device)
+        self.running_var = self.running_var.to(x.device).double()
+        self.running_mean= self.running_mean.to(x.device).double()
         x = x.double()
         n = torch.tensor(x.numel() / (x.size(1)))
         if self.training:
@@ -170,9 +170,11 @@ class OldBatchNorm2d(nn.Module):
             with torch.no_grad():
                 self.running_mean = self.momentum * mean  \
                                    + (1 - self.momentum) * self.running_mean
+                self.running_mean = self.running_mean.float()
                 # update running_var with unbiased var
                 self.running_var = self.momentum * var * n / (n - 1) \
                                    + (1 - self.momentum) * self.running_var
+                self.running_var = self.running_var.float()
             # var = torch.max(self.limit,var)
             x = self.weight * (x - mean) / torch.sqrt(var + self.eps) + self.bias
             # self.running_var = (self.momentum) * self.running_var + (1 - self.momentum) * var
