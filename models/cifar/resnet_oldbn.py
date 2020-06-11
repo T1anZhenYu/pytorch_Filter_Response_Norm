@@ -25,19 +25,19 @@ class Bottleneck(nn.Module):
     def __init__(self, inplanes, planes, stride=1, downsample=None):
         super(Bottleneck, self).__init__()
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
-        # self.bn1 = nn.BatchNorm2d(planes)
+        # self.bn1 = OldBatchNorm2d(planes)
         self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride,
                                padding=1, bias=False)
-        # self.bn2 = nn.BatchNorm2d(planes)
+        # self.bn2 = OldBatchNorm2d(planes)
         self.conv3 = nn.Conv2d(planes, planes * 4, kernel_size=1, bias=False)
-        # self.bn3 = nn.BatchNorm2d(planes * 4)
+        # self.bn3 = OldBatchNorm2d(planes * 4)
         self.relu = nn.ReLU(inplace=True)
         self.downsample = downsample
         self.stride = stride
-        self.frn1 = nn.BatchNorm2d(planes)
-        self.frn2 = nn.BatchNorm2d(planes)
-        self.frn3 = nn.BatchNorm2d(planes * 4)
-        self.frn4 = nn.BatchNorm2d(planes * 4)
+        self.frn1 = OldBatchNorm2d(planes)
+        self.frn2 = OldBatchNorm2d(planes)
+        self.frn3 = OldBatchNorm2d(planes * 4)
+        self.frn4 = OldBatchNorm2d(planes * 4)
 
     def forward(self, x):
         residual = x
@@ -70,18 +70,18 @@ class BasicBlock(nn.Module):
     def __init__(self, inplanes, planes, stride=1, downsample=None):
         super(BasicBlock, self).__init__()
         self.conv1 = conv3x3(inplanes, planes, stride)
-        # self.bn1 = nn.BatchNorm2d(planes)
+        # self.bn1 = OldBatchNorm2d(planes)
         self.relu = nn.ReLU(inplace=True)
         self.conv2 = conv3x3(planes, planes)
-        # self.bn2 = nn.BatchNorm2d(planes)
+        # self.bn2 = OldBatchNorm2d(planes)
         self.downsample = downsample
         self.stride = stride
 
-        self.frn1 = nn.BatchNorm2d(planes)
+        self.frn1 = OldBatchNorm2d(planes)
         # self.tlu1 = TLU(planes)
 
-        self.frn2 = nn.BatchNorm2d(planes)
-        self.frn3 = nn.BatchNorm2d(planes)
+        self.frn2 = OldBatchNorm2d(planes)
+        self.frn3 = OldBatchNorm2d(planes)
         # self.tlu2 = TLU(planes)
 
 
@@ -122,8 +122,8 @@ class ResNet_BN(nn.Module):
         self.inplanes = 16
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding=1,
                                bias=False)
-        # self.bn1 = nn.BatchNorm2d(16)
-        self.frn1 = nn.BatchNorm2d(16)
+        # self.bn1 = OldBatchNorm2d(16)
+        self.frn1 = OldBatchNorm2d(16)
         # self.tlu1 = TLU(16)
 
         self.relu = nn.ReLU(inplace=True)
@@ -137,7 +137,7 @@ class ResNet_BN(nn.Module):
             if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
                 m.weight.data.normal_(0, math.sqrt(2. / n))
-            elif isinstance(m, nn.BatchNorm2d):
+            elif isinstance(m, OldBatchNorm2d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
 
@@ -147,7 +147,7 @@ class ResNet_BN(nn.Module):
             downsample = nn.Sequential(
                 nn.Conv2d(self.inplanes, planes * block.expansion,
                           kernel_size=1, stride=stride, bias=False),
-                # nn.BatchNorm2d(planes * block.expansion),
+                # OldBatchNorm2d(planes * block.expansion),
             )
 
         layers = []
