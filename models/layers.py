@@ -176,13 +176,15 @@ class OldBatchNorm2d(nn.Module):
                                    + (1 - self.momentum) * self.running_var
                 self.running_var = self.running_var.float()
             # var = torch.max(self.limit,var)
-            x = self.weight * (x - mean) / torch.sqrt(var + self.eps) + self.bias
+            x = (x - mean) / torch.sqrt(var + self.eps)
             # self.running_var = (self.momentum) * self.running_var + (1 - self.momentum) * var
 
         else:
             # var = torch.max(self.limit,self.running_var)
-            x = self.weight * (x - self.running_mean) / (torch.sqrt(self.running_var +
-                                                                   self.eps)) + self.bias
+            x = (x - self.running_mean) / (torch.sqrt(self.running_var +
+                                                                   self.eps))
+        if self.affine:
+            x = x * self.weight.double() + self.bias.double()
         x = x.float()
         return x
 class DetachVarKeepMaxMinGrad(nn.BatchNorm2d):
