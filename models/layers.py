@@ -251,7 +251,8 @@ class BatchNormFunction(torch.autograd.Function):
     @staticmethod
     def forward(ctx, x,running_mean,running_var, eps, momentum):
         n = x.numel() / (x.size(1))
-
+        #running_mean = running_mean.double()
+        #running_var = running_var.double()        
         mean = x.mean(dim=(0, 2, 3), keepdim=True)
         # mean = torch.clamp(mean,min=0,max=4)
         # print('mean size:', mean.size())
@@ -266,6 +267,8 @@ class BatchNormFunction(torch.autograd.Function):
         # update running_var with unbiased var
         running_var.copy_(momentum * var * n / (n - 1) \
                            + (1 - momentum) * running_var)
+        #running_mean = running_mean.float()
+        #running_var = running_var.float()
         y = (x - mean[None, :, None, None]) / (torch.sqrt(var[None, :, None, None]))
         ctx.eps = 0.00
         ctx.save_for_backward(y, var, )
@@ -302,7 +305,8 @@ class GradBatchNorm(nn.BatchNorm2d):
             num_features, eps, momentum, affine, track_running_stats)
     def forward(self,x):
         self._check_input_dim(x)
-
+        self.running_mean = self.running_mean.double()
+        self.running_var = self.running_var.double()
         x = x.double()
         if self.training:
             y = BatchNormFunction.apply(x,self.running_mean,self.running_var,self.eps,self.momentum)
