@@ -334,7 +334,7 @@ class DetachVarFunction(torch.autograd.Function):
         var = (x - mean).pow(2).sum(dim=(0, 2, 3)) / (n)
         mean = mean.squeeze()
         var = var.squeeze()
-
+        var = torch.clamp(var, min=0.05, max=4)
         running_mean.copy_(momentum * mean \
                            + (1 - momentum) * running_mean)
         # update running_var with unbiased var
