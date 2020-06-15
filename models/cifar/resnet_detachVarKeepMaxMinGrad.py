@@ -11,7 +11,7 @@ import torch.nn as nn
 import math
 from ..layers import DetachVarKeepMaxMin
 
-__all__ = ['DetachVarKeepMaxMin_resnet']
+__all__ = ['detachvarkeepmaxmin_resnet']
 
 
 def conv3x3(in_planes, out_planes, stride=1):
@@ -176,7 +176,7 @@ class ResNet_Frn(nn.Module):
         return x
 
 
-def DetachVarKeepMaxMin_resnet(**kwargs):
+def detachvarkeepmaxmin_resnet(**kwargs):
     """
     Constructs a ResNet model.
     """
