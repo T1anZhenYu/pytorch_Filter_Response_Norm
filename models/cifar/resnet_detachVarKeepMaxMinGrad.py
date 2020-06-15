@@ -9,9 +9,9 @@ https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py
 '''
 import torch.nn as nn
 import math
-from ..layers import DetachVarKeepMaxMinGrad
+from ..layers import DetachVarKeepMaxMin
 
-__all__ = ['detachvarkeepmaxmingrad_resnet']
+__all__ = ['DetachVarKeepMaxMin_resnet']
 
 
 def conv3x3(in_planes, out_planes, stride=1):
@@ -34,10 +34,10 @@ class Bottleneck(nn.Module):
         self.relu = nn.ReLU(inplace=True)
         self.downsample = downsample
         self.stride = stride
-        self.frn1 = DetachVarKeepMaxMinGrad(planes)
-        self.frn2 = DetachVarKeepMaxMinGrad(planes)
-        self.frn3 = DetachVarKeepMaxMinGrad(planes * 4)
-        self.frn4 = DetachVarKeepMaxMinGrad(planes * 4)
+        self.frn1 = DetachVarKeepMaxMin(planes)
+        self.frn2 = DetachVarKeepMaxMin(planes)
+        self.frn3 = DetachVarKeepMaxMin(planes * 4)
+        self.frn4 = DetachVarKeepMaxMin(planes * 4)
 
     def forward(self, x):
         residual = x
@@ -77,11 +77,11 @@ class BasicBlock(nn.Module):
         self.downsample = downsample
         self.stride = stride
 
-        self.frn1 = DetachVarKeepMaxMinGrad(planes)
+        self.frn1 = DetachVarKeepMaxMin(planes)
         # self.tlu1 = TLU(planes)
 
-        self.frn2 = DetachVarKeepMaxMinGrad(planes)
-        self.frn3 = DetachVarKeepMaxMinGrad(planes)
+        self.frn2 = DetachVarKeepMaxMin(planes)
+        self.frn3 = DetachVarKeepMaxMin(planes)
         # self.tlu2 = TLU(planes)
 
 
@@ -123,7 +123,7 @@ class ResNet_Frn(nn.Module):
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding=1,
                                bias=False)
         # self.bn1 = nn.BatchNorm2d(16)
-        self.frn1 = DetachVarKeepMaxMinGrad(16)
+        self.frn1 = DetachVarKeepMaxMin(16)
         # self.tlu1 = TLU(16)
 
         self.relu = nn.ReLU(inplace=True)
@@ -145,7 +145,7 @@ class ResNet_Frn(nn.Module):
             downsample = nn.Sequential(
                 nn.Conv2d(self.inplanes, planes * block.expansion,
                           kernel_size=1, stride=stride, bias=False),
-                # DetachVarKeepMaxMinGrad(planes * block.expansion),
+                # DetachVarKeepMaxMin(planes * block.expansion),
             )
 
         layers = []
@@ -176,9 +176,9 @@ class ResNet_Frn(nn.Module):
         return x
 
 
-def detachvarkeepmaxmingrad_resnet(**kwargs):
+def DetachVarKeepMaxMin_resnet(**kwargs):
     """
     Constructs a ResNet model.
     """
-    print("in DetachVarKeepMaxMinGrad_resnet")
+    print("in DetachVarKeepMaxMin_resnet")
     return ResNet_Frn(**kwargs)
