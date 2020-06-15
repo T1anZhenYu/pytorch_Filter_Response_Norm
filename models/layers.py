@@ -225,10 +225,10 @@ class DetachVarKeepMaxMinFunction(torch.autograd.Function):
         channelMin = \
             torch.min(torch.min(torch.min(y, 0, keepdim=True)[0], 2, keepdim=True)[0], 3, keepdim=True)[0]
 
-        A = (y >= channelMax).float()
+        A = (y >= channelMax).double()
         # print("A:")
         # print(A)
-        B = (y <= channelMin).float()
+        B = (y <= channelMin).double()
         Mask = A + B
         # print('mask',Mask.shape)
         g = grad_output
