@@ -187,18 +187,78 @@ class OldBatchNorm2d(nn.Module):
             x = x * self.weight.double() + self.bias.double()
         x = x.float()
         return x
-class DetachVarKeepMaxMinGrad(nn.BatchNorm2d):
-    def __init__(self, num_features, eps=0.01, momentum=0.1,
-                 affine=True, track_running_stats=True):
-        super(DetachVarKeepMaxMinGrad, self).__init__(
+
+
+class DetachVarKeepMaxMinFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, x, running_mean, running_var, eps, momentum):
+        n = x.numel() / (x.size(1))
+
+        mean = x.mean(dim=(0, 2, 3), keepdim=True)
+        # mean = torch.clamp(mean,min=0,max=4)
+        # print('mean size:', mean.size())
+        # use biased var in train
+
+        var = (x - mean).pow(2).sum(dim=(0, 2, 3)) / (n)
+        mean = mean.squeeze()
+        var = var.squeeze()
+
+        running_mean.copy_(momentum * mean \
+                           + (1 - momentum) * running_mean)
+        # update running_var with unbiased var
+        running_var.copy_(momentum * var * n / (n - 1) \
+                          + (1 - momentum) * running_var)
+        y = (x - mean[None, :, None, None]) / (torch.sqrt(var[None, :, None, None]))
+        ctx.eps = 0.00
+        ctx.save_for_backward(y, var, )
+        return y
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        # print("grad dtype")
+
+        eps = ctx.eps
+        y, var = ctx.saved_variables
+        n = y.numel() / y.size(1)
+        channelMax = \
+            torch.max(torch.max(torch.max(y, 0, keepdim=True)[0], 2, keepdim=True)[0], 3, keepdim=True)[0]
+        channelMin = \
+            torch.min(torch.min(torch.min(y, 0, keepdim=True)[0], 2, keepdim=True)[0], 3, keepdim=True)[0]
+
+        A = (y >= channelMax).float()
+        # print("A:")
+        # print(A)
+        B = (y <= channelMin).float()
+        Mask = A + B
+        # print('mask',Mask.shape)
+        g = grad_output
+        # print("g:",g[:,0,:,:])
+        gy = (g * y).sum(dim=(0, 2, 3), keepdim=True) / (n) * y
+        # print("gy dtype",gy.dtype)
+        # print("g*y",(g * y).mean(dim=(0,2,3),keepdim=True)[:,0,:,:])
+        # print("gy:",gy[:,0,:,:])
+        g1 = g.mean(dim=(0, 2, 3), keepdim=True)
+        # print("g1:",g1[:,0,:,:])
+        gx_ = g - g1 - gy * Mask
+        # print("g - g1",(g-g1)[:,0,:,:])
+        # print("gx_:",gx_[:,0,:,:])
+        gx = 1. / torch.sqrt(var[None, :, None, None]) * (gx_)
+        # gx = gx.float()
+        # print("gx:",gx[:,0,:,:])
+        return gx, None, None, None, None
+
+
+class DetachVarKeepMaxMin(nn.BatchNorm2d):
+    def __init__(self, num_features, eps=0.00001, momentum=0.1,
+                 affine=False, track_running_stats=True):
+        super(DetachVarKeepMaxMin, self).__init__(
             num_features, eps, momentum, affine, track_running_stats)
-        self.total = 1
 
-    def forward(self, input):
-        self._check_input_dim(input)
+    def forward(self, x):
+        self._check_input_dim(x)
 
-        exponential_average_factor = 0.0
-
+        exponential_average_factor = 0.1
+        x = x.double()
         if self.training and self.track_running_stats:
             if self.num_batches_tracked is not None:
                 self.num_batches_tracked += 1
@@ -206,45 +266,16 @@ class DetachVarKeepMaxMinGrad(nn.BatchNorm2d):
                     exponential_average_factor = 1.0 / float(self.num_batches_tracked)
                 else:  # use exponential moving average
                     exponential_average_factor = self.momentum
-
-        # calculate running estimates
         if self.training:
-            mean = input.mean(dim=(0, 2, 3), keepdim=True)
-
-            channelMax = \
-            torch.max(torch.max(torch.max(input, 0, keepdim=True)[0], 2, keepdim=True)[0], 3, keepdim=True)[0]
-            channelMin = \
-            torch.min(torch.min(torch.min(input, 0, keepdim=True)[0], 2, keepdim=True)[0], 3, keepdim=True)[0]
-
-            A = (input >= channelMax).float()
-            # print("A:")
-            # print(A)
-            B = (input <= channelMin).float()
-            Mask = A + B
-            n = torch.tensor(input.numel() / (input.size(1)))
-            input_ = input * Mask + (input * (1 - Mask)).detach()
-
-            var = (input_ - mean).pow(2).mean(dim=(0, 2, 3), keepdim=True)
-            # var = torch.clamp(var,min=0.05,max=4)
-            mean = mean.squeeze()
-            var = var.squeeze()
-
-            with torch.no_grad():
-                self.running_mean = exponential_average_factor * mean  \
-                                   + (1 - exponential_average_factor) * self.running_mean
-                # update running_var with unbiased var
-                self.running_var = exponential_average_factor * var * n / (n - 1) \
-                                   + (1 - exponential_average_factor) * self.running_var
-
-            input = (input- mean[None, :, None, None]) / (torch.sqrt(var[None, :, None, None] + self.eps)).detach()
+            y = DetachVarKeepMaxMinFunction.apply(x, self.running_mean, self.running_var, self.eps, self.momentum)
         else:
             mean = self.running_mean
             var = self.running_var
-            input = (input - mean[None, :, None, None]) / (torch.sqrt(var[None, :, None, None] + self.eps))
-
+            y = (x - mean[None, :, None, None]) / (torch.sqrt(var[None, :, None, None] + self.eps))
         if self.affine:
-            input = input * self.weight[None, :, None, None] + self.bias[None, :, None, None]
-        return input
+            y = y * self.weight[None, :, None, None] + self.bias[None, :, None, None]
+        y = y.float()
+        return y
 
 
 class BatchNormFunction(torch.autograd.Function):
