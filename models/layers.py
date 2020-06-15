@@ -256,7 +256,8 @@ class DetachVarKeepMaxMin(nn.BatchNorm2d):
 
     def forward(self, x):
         self._check_input_dim(x)
-
+        self.running_mean = self.running_mean.double()
+        self.running_var = self.running_var.double()
         exponential_average_factor = 0.1
         x = x.double()
         if self.training and self.track_running_stats:
@@ -274,6 +275,8 @@ class DetachVarKeepMaxMin(nn.BatchNorm2d):
             y = (x - mean[None, :, None, None]) / (torch.sqrt(var[None, :, None, None] + self.eps))
         if self.affine:
             y = y * self.weight[None, :, None, None] + self.bias[None, :, None, None]
+        self.running_var = self.running_var.float()
+        self.running_mean = self.running_mean.float()
         y = y.float()
         return y
 
