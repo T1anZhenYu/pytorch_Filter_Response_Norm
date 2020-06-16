@@ -210,7 +210,7 @@ class DetachVarKeepMaxMinFunction(torch.autograd.Function):
                           + (1 - momentum) * running_var)
         y = (x - mean[None, :, None, None]) / (torch.sqrt(var[None, :, None, None]))
         ctx.eps = 0.00
-        ctx.save_for_backward(y, var, )
+        ctx.save_for_backward(y, var,x )
         return y
 
     @staticmethod
@@ -218,12 +218,12 @@ class DetachVarKeepMaxMinFunction(torch.autograd.Function):
         # print("grad dtype")
 
         eps = ctx.eps
-        y, var = ctx.saved_variables
+        y, var,x = ctx.saved_variables
         n = y.numel() / y.size(1)
         channelMax = \
-            torch.max(torch.max(torch.max(y, 0, keepdim=True)[0], 2, keepdim=True)[0], 3, keepdim=True)[0]
+            torch.max(torch.max(torch.max(x, 0, keepdim=True)[0], 2, keepdim=True)[0], 3, keepdim=True)[0]
         channelMin = \
-            torch.min(torch.min(torch.min(y, 0, keepdim=True)[0], 2, keepdim=True)[0], 3, keepdim=True)[0]
+            torch.min(torch.min(torch.min(x, 0, keepdim=True)[0], 2, keepdim=True)[0], 3, keepdim=True)[0]
 
         A = (y >= channelMax).double()
         # print("A:")
