@@ -513,7 +513,7 @@ class OfficialDetachVar(nn.Module):
         if self.training:
             mean = x.mean(dim=(0, 2, 3), keepdim=True)
             var = ((x - mean).pow(2).mean(dim=(0, 2, 3), keepdim=True)).detach()
-            var = torch.clamp(var,0.05,100000)
+            var = torch.clamp(var,0,4)
             # print("mean device:",mean.device)
             # print("running mean device:",self.running_mean.device)
             # print("runing device:",self.running_mean.device)
