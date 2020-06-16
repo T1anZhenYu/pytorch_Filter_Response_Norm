@@ -200,6 +200,7 @@ class DetachVarKeepMaxMinFunction(torch.autograd.Function):
         # use biased var in train
 
         var = (x - mean).pow(2).sum(dim=(0, 2, 3)) / (n)
+        var = torch.clamp(var, min=0.05, max=4)
         mean = mean.squeeze()
         var = var.squeeze()
 
