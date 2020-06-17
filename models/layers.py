@@ -444,19 +444,22 @@ class RangeBN(nn.BatchNorm2d):
         x = x.double()
         n = x.numel() / (x.size(1))
         if self.training:
+            print('x', x)
+
             channelMax = \
-                torch.max(torch.max(torch.max(x, 0, keepdim=True)[0], 2, keepdim=True)[0], 3, keepdim=True)[0]
+                torch.max(torch.max(torch.max(x, 0)[0], -1, )[0], -1, )[0]
             channelMin = \
-                torch.min(torch.min(torch.min(x, 0, keepdim=True)[0], 2, keepdim=True)[0], 3, keepdim=True)[0]
-            var = torch.pow((channelMax - channelMin),2)/(2* math.log(n))
-            mean = x.mean(dim=(0, 2, 3), keepdim=True)
-            var.squeeze()
-            mean.squeeze()
+                torch.min(torch.min(torch.min(x, 0)[0], -1, )[0], -1, )[0]
+
+            var = torch.pow((channelMax - channelMin), 2) / (2 * math.log(n))
+
+            mean = x.mean(dim=(0, 2, 3))
+
             self.running_mean.copy_(self.momentum * mean \
-                               + (1 - self.momentum) * self.running_mean)
+                                    + (1 - self.momentum) * self.running_mean)
             # update running_var with unbiased var
             self.running_var.copy_(self.momentum * var * n / (n - 1) \
-                              + (1 - self.momentum) * self.running_var)
+                                   + (1 - self.momentum) * self.running_var)
             y = (x - mean[None, :, None, None]) / (torch.sqrt(var[None, :, None, None] + self.eps))
 
         else:
