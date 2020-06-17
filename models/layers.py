@@ -494,9 +494,9 @@ class OfficialDetachVar(nn.Module):
         self.running_var = torch.ones(1, num_features, 1, 1)
         # self.running_var = torch.Tensor(1, num_features, 1, 1)
         self.uplimit = nn.parameter.Parameter(
-                torch.Tensor(1, num_features, 1, 1), requires_grad=True)
+                torch.DoubleTensor(1, num_features, 1, 1), requires_grad=True,dtype=)
         self.downlimit = nn.parameter.Parameter(
-                torch.Tensor(1, num_features, 1, 1), requires_grad=True)
+                torch.DoubleTensor(1, num_features, 1, 1), requires_grad=True)
 
         self.momentum = momentum
         self.reset_parameters()
