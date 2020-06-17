@@ -494,7 +494,7 @@ class OfficialDetachVar(nn.Module):
         self.running_var = torch.ones(1, num_features, 1, 1)
         # self.running_var = torch.Tensor(1, num_features, 1, 1)
         self.uplimit = nn.parameter.Parameter(
-                torch.Tensor(1, num_features, 1, 1)*5, requires_grad=True)
+                torch.Tensor(1, num_features, 1, 1), requires_grad=True)
         self.downlimit = nn.parameter.Parameter(
                 torch.Tensor(1, num_features, 1, 1), requires_grad=True)
 
@@ -505,8 +505,8 @@ class OfficialDetachVar(nn.Module):
         nn.init.ones_(self.weight)
         nn.init.zeros_(self.bias)
         nn.init.ones_(self.running_var)
-        nn.init.constant_(self.limit,0.1)
-
+        nn.init.constant_(self.downlimit,0.1)
+        nn.init.constant_(self.uplimit, 5)
     def forward(self, x):
         self.running_var = self.running_var.to(x.device).double()
         self.running_mean= self.running_mean.to(x.device).double()
