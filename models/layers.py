@@ -4,6 +4,7 @@ from torch.nn.parameter import Parameter
 from torch.nn import functional as F
 import numpy as np
 import os
+import math
 import setting
 class Conv2d(nn.Conv2d):
 
@@ -447,7 +448,7 @@ class RangeBN(nn.BatchNorm2d):
                 torch.max(torch.max(torch.max(x, 0, keepdim=True)[0], 2, keepdim=True)[0], 3, keepdim=True)[0]
             channelMin = \
                 torch.min(torch.min(torch.min(x, 0, keepdim=True)[0], 2, keepdim=True)[0], 3, keepdim=True)[0]
-            var = torch.pow((channelMax - channelMin),2)/(2*torch.log(torch.Tensor(n)))
+            var = torch.pow((channelMax - channelMin),2)/(2* math.log(n))
             mean = x.mean(dim=(0, 2, 3), keepdim=True)
             var.squeeze()
             mean.squeeze()
