@@ -444,7 +444,7 @@ class RangeBN(nn.BatchNorm2d):
         x = x.double()
         n = x.numel() / (x.size(1))
         if self.training:
-            print('x', x)
+            # print('x', x)
 
             channelMax = \
                 torch.max(torch.max(torch.max(x, 0)[0], -1, )[0], -1, )[0]
