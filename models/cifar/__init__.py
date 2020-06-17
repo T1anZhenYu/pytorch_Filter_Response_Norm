@@ -8,3 +8,4 @@ from .resnet_gradBN import *
 from .resnet_detachVar import *
 from .resnet_detachVarKeepMaxMinGrad import *
 from .resnet_officialdetachVar import *
+from .resnet_rangeBN import *
