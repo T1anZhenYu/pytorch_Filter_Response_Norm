@@ -493,7 +493,9 @@ class OfficialDetachVar(nn.Module):
         self.running_mean = torch.zeros(1, num_features, 1, 1)
         self.running_var = torch.ones(1, num_features, 1, 1)
         # self.running_var = torch.Tensor(1, num_features, 1, 1)
-        self.limit = nn.parameter.Parameter(
+        self.uplimit = nn.parameter.Parameter(
+                torch.Tensor(1, num_features, 1, 1)*5, requires_grad=True)
+        self.downlimit = nn.parameter.Parameter(
                 torch.Tensor(1, num_features, 1, 1), requires_grad=True)
 
         self.momentum = momentum
@@ -513,7 +515,7 @@ class OfficialDetachVar(nn.Module):
         if self.training:
             mean = x.mean(dim=(0, 2, 3), keepdim=True)
             var = ((x - mean).pow(2).mean(dim=(0, 2, 3), keepdim=True)).detach()
-            var = torch.clamp(var,0,4)
+            var = torch.clamp(var,self.downlimit,self.uplimit)
             # print("mean device:",mean.device)
             # print("running mean device:",self.running_mean.device)
             # print("runing device:",self.running_mean.device)
