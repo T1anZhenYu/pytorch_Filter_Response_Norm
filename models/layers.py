@@ -447,7 +447,7 @@ class RangeBN(nn.BatchNorm2d):
                 torch.max(torch.max(torch.max(x, 0, keepdim=True)[0], 2, keepdim=True)[0], 3, keepdim=True)[0]
             channelMin = \
                 torch.min(torch.min(torch.min(x, 0, keepdim=True)[0], 2, keepdim=True)[0], 3, keepdim=True)[0]
-            var = torch.square(channelMax - channelMin)/(2*torch.log(n))
+            var = torch.pow(channelMax - channelMin)/(2*torch.log(n),2)
             mean = x.mean(dim=(0, 2, 3), keepdim=True)
             var.squeeze()
             mean.squeeze()
