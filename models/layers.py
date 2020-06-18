@@ -441,8 +441,8 @@ class RangeBN(nn.BatchNorm2d):
         self.downlimit = nn.parameter.Parameter(
                 torch.DoubleTensor(1, num_features, 1, 1), requires_grad=True)
     def reset_parameters(self):
-        nn.init.ones_(self.weight)
-        nn.init.zeros_(self.bias)
+        # nn.init.ones_(self.weight)
+        # nn.init.zeros_(self.bias)
         nn.init.ones_(self.running_var)
         nn.init.zeros_(self.running_mean)
         nn.init.constant_(self.downlimit,0.1)
