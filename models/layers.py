@@ -451,7 +451,7 @@ class RangeBN(nn.BatchNorm2d):
             channelMin = \
                 torch.min(torch.min(torch.min(x, 0)[0], -1, )[0], -1, )[0]
 
-            var = (torch.pow((channelMax - channelMin), 2) / (2 * math.log(n))).detach()
+            var = (torch.pow((channelMax - channelMin), 2)).detach() / (2 * math.log(n))
 
             mean = x.mean(dim=(0, 2, 3))
 
