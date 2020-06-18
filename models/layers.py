@@ -485,11 +485,10 @@ class RangeBN(nn.Module):
             channelMin = \
                 torch.min(torch.min(torch.min(x, 0)[0], -1, )[0], -1, )[0]
             # print(channelMax.shape)
-            var = (torch.pow((channelMax - channelMin), 2)) / (2 * math.log(n))
+            var = (torch.pow((channelMax - channelMin), 2)).detach() / (2 * math.log(n))
             # print(var.shape)
-            var = torch.max(var,self.uplimit)
-
             var = torch.min(var,self.downlimit)
+            var = torch.max(var,self.uplimit)
             mean = x.mean(dim=(0, 2, 3))
             # print(var.shape)
             self.running_mean.copy_(self.momentum * mean \
