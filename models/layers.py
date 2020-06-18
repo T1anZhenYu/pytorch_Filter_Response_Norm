@@ -431,24 +431,48 @@ class DetachVarNorm(nn.BatchNorm2d):
         return y
 
 
-class RangeBN(nn.BatchNorm2d):
-    def __init__(self, num_features, eps=0.00001, momentum=0.1,
-                 affine=True, track_running_stats=True):
-        super(RangeBN, self).__init__(
-            num_features, eps, momentum, affine, track_running_stats)
+class RangeBN(nn.Module):
+    def __init__(self, num_features, eps=1e-05, momentum=0.9, affine=True):
+        """
+        Input Variables:
+        ----------------
+            bias, weight, tau: Variables of shape [1, C, 1, 1].
+            eps: A scalar constant or learnable variable.
+        """
+
+        super(RangeBN, self).__init__()
+        self.affine = affine
+        if self.affine:
+            self.bias = nn.parameter.Parameter(
+                torch.Tensor(1, num_features, 1, 1), requires_grad=True)
+            self.weight = nn.parameter.Parameter(
+                torch.Tensor(1, num_features, 1, 1), requires_grad=True)
+        else:
+            self.bias = nn.parameter.Parameter(
+                torch.Tensor(1, num_features, 1, 1), requires_grad=False)
+            self.weight = nn.parameter.Parameter(
+                torch.Tensor(1, num_features, 1, 1), requires_grad=False)
+        self.eps = eps
+        self.running_mean = torch.zeros(num_features)
+        self.running_var = torch.ones(num_features)
+        # self.running_var = torch.Tensor(1, num_features, 1, 1)
         self.uplimit = nn.parameter.Parameter(
-                torch.DoubleTensor(1, num_features, 1, 1), requires_grad=True)
+                torch.DoubleTensor(num_features), requires_grad=True)
         self.downlimit = nn.parameter.Parameter(
-                torch.DoubleTensor(1, num_features, 1, 1), requires_grad=True)
+                torch.DoubleTensor( num_features), requires_grad=True)
+
+        self.momentum = momentum
+        self.reset_parameters()
+
     def reset_parameters(self):
-        # nn.init.ones_(self.weight)
-        # nn.init.zeros_(self.bias)
+        nn.init.ones_(self.weight)
+        nn.init.zeros_(self.bias)
         nn.init.ones_(self.running_var)
         nn.init.zeros_(self.running_mean)
         nn.init.constant_(self.downlimit,0.1)
         nn.init.constant_(self.uplimit, 5)
     def forward(self, x):
-        self._check_input_dim(x)
+        # self._check_input_dim(x)
         self.running_mean = self.running_mean.double()
         self.running_var = self.running_var.double()
         x = x.double()
@@ -460,12 +484,14 @@ class RangeBN(nn.BatchNorm2d):
                 torch.max(torch.max(torch.max(x, 0)[0], -1, )[0], -1, )[0]
             channelMin = \
                 torch.min(torch.min(torch.min(x, 0)[0], -1, )[0], -1, )[0]
-
+            # print(channelMax.shape)
             var = (torch.pow((channelMax - channelMin), 2)) / (2 * math.log(n))
+            # print(var.shape)
             var = torch.max(var,self.uplimit)
+
             var = torch.min(var,self.downlimit)
             mean = x.mean(dim=(0, 2, 3))
-
+            # print(var.shape)
             self.running_mean.copy_(self.momentum * mean \
                                     + (1 - self.momentum) * self.running_mean)
             # update running_var with unbiased var
