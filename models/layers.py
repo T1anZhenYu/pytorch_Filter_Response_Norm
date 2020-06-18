@@ -436,7 +436,17 @@ class RangeBN(nn.BatchNorm2d):
                  affine=True, track_running_stats=True):
         super(RangeBN, self).__init__(
             num_features, eps, momentum, affine, track_running_stats)
-
+        self.uplimit = nn.parameter.Parameter(
+                torch.DoubleTensor(1, num_features, 1, 1), requires_grad=True)
+        self.downlimit = nn.parameter.Parameter(
+                torch.DoubleTensor(1, num_features, 1, 1), requires_grad=True)
+    def reset_parameters(self):
+        nn.init.ones_(self.weight)
+        nn.init.zeros_(self.bias)
+        nn.init.ones_(self.running_var)
+        nn.init.zeros_(self.running_mean)
+        nn.init.constant_(self.downlimit,0.1)
+        nn.init.constant_(self.uplimit, 5)
     def forward(self, x):
         self._check_input_dim(x)
         self.running_mean = self.running_mean.double()
@@ -451,8 +461,9 @@ class RangeBN(nn.BatchNorm2d):
             channelMin = \
                 torch.min(torch.min(torch.min(x, 0)[0], -1, )[0], -1, )[0]
 
-            var = (torch.pow((channelMax - channelMin), 2)).detach() / (2 * math.log(n))
-
+            var = (torch.pow((channelMax - channelMin), 2)) / (2 * math.log(n))
+            var = torch.max(var,self.uplimit)
+            var = torch.min(var,self.downlimit)
             mean = x.mean(dim=(0, 2, 3))
 
             self.running_mean.copy_(self.momentum * mean \
@@ -509,6 +520,7 @@ class OfficialDetachVar(nn.Module):
         nn.init.ones_(self.weight)
         nn.init.zeros_(self.bias)
         nn.init.ones_(self.running_var)
+        nn.init.zeros_(self.running_mean)
         nn.init.constant_(self.downlimit,0.1)
         nn.init.constant_(self.uplimit, 5)
     def forward(self, x):
