@@ -473,8 +473,8 @@ class RangeBN(nn.Module):
         nn.init.constant_(self.uplimit, 5)
     def forward(self, x):
         # self._check_input_dim(x)
-        self.running_mean = self.running_mean.double()
-        self.running_var = self.running_var.double()
+        self.running_mean = self.running_mean.double().to(x.device)
+        self.running_var = self.running_var.double().to(x.device)
         x = x.double()
         n = x.numel() / (x.size(1))
         if self.training:
