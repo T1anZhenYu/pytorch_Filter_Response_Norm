@@ -25,7 +25,7 @@ from utils import Logger, AverageMeter, accuracy, mkdir_p, savefig
 import setting
 
 model_names = sorted(name for name in models.__dict__
-    if name.startswith("__")
+    if not name.startswith("__")
     and callable(models.__dict__[name]))
 
 parser = argparse.ArgumentParser(description='PyTorch CIFAR10/100 Training')
