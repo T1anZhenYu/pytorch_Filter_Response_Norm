@@ -494,7 +494,7 @@ class RangeBN(nn.Module):
             self.running_mean.copy_(self.momentum * mean \
                                     + (1 - self.momentum) * self.running_mean)
             # update running_var with unbiased var
-            self.running_var.copy_(self.momentum * var * n / (n - 1) \
+            self.running_var.copy_(self.momentum * var \
                                    + (1 - self.momentum) * self.running_var)
             y = (x - mean[None, :, None, None]) / (torch.sqrt(var[None, :, None, None] + self.eps))
 
@@ -581,3 +581,79 @@ class OfficialDetachVar(nn.Module):
             x = x * self.weight.double() + self.bias.double()
         x = x.float()
         return x
+
+class MyRangeBN(nn.Module):
+    def __init__(self, num_features, eps=1e-05, momentum=0.9, affine=True):
+        """
+        Input Variables:
+        ----------------
+            bias, weight, tau: Variables of shape [1, C, 1, 1].
+            eps: A scalar constant or learnable variable.
+        """
+
+        super(MyRangeBN, self).__init__()
+        self.affine = affine
+        if self.affine:
+            self.bias = nn.parameter.Parameter(
+                torch.Tensor(1, num_features, 1, 1), requires_grad=True)
+            self.weight = nn.parameter.Parameter(
+                torch.Tensor(1, num_features, 1, 1), requires_grad=True)
+        else:
+            self.bias = nn.parameter.Parameter(
+                torch.Tensor(1, num_features, 1, 1), requires_grad=False)
+            self.weight = nn.parameter.Parameter(
+                torch.Tensor(1, num_features, 1, 1), requires_grad=False)
+        self.eps = eps
+        self.running_mean = torch.zeros(num_features)
+        self.running_var = torch.ones(num_features)
+        # self.running_var = torch.Tensor(1, num_features, 1, 1)
+        self.uplimit = nn.parameter.Parameter(
+                torch.DoubleTensor(num_features), requires_grad=True)
+        self.downlimit = nn.parameter.Parameter(
+                torch.DoubleTensor( num_features), requires_grad=True)
+
+        self.momentum = momentum
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        nn.init.ones_(self.weight)
+        nn.init.zeros_(self.bias)
+        nn.init.ones_(self.running_var)
+        nn.init.zeros_(self.running_mean)
+        nn.init.constant_(self.downlimit,0.1)
+        nn.init.constant_(self.uplimit, 5)
+    def forward(self, x):
+        # self._check_input_dim(x)
+        self.running_mean = self.running_mean.double().to(x.device)
+        self.running_var = self.running_var.double().to(x.device)
+        x = x.double()
+        n = x.numel() / (x.size(1))
+        if self.training:
+            # print('x', x)
+
+            channelMax = \
+                torch.max(torch.max(torch.max(x, 0)[0], -1, )[0], -1, )[0]
+            channelMin = \
+                torch.min(torch.min(torch.min(x, 0)[0], -1, )[0], -1, )[0]
+            # print(channelMax.shape)
+            var = (channelMax - channelMin).detach()
+            # print(var.shape)
+            var = torch.min(var,self.downlimit)
+            var = torch.max(var,self.uplimit)
+            mean = x.mean(dim=(0, 2, 3))
+            # print(var.shape)
+            self.running_mean.copy_(self.momentum * mean \
+                                    + (1 - self.momentum) * self.running_mean)
+            # update running_var with unbiased var
+            self.running_var.copy_(self.momentum * var \
+                                   + (1 - self.momentum) * self.running_var)
+            y = (x - mean[None, :, None, None]) / (torch.sqrt(var[None, :, None, None] + self.eps))
+
+        else:
+            mean = self.running_mean
+            var = self.running_var
+            y = (x - mean[None, :, None, None]) / (torch.sqrt(var[None, :, None, None] + self.eps))
+        if self.affine:
+            y = y * self.weight[None, :, None, None] + self.bias[None, :, None, None]
+        y = y.float()
+        return y
