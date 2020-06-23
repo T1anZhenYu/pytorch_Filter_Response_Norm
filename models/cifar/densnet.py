@@ -7,13 +7,13 @@ import torch.nn.functional as F
 
 from ..layers import *
 
-__all__ = ['DenseNet121_varlearn',"DenseNet169_varlearn","DenseNet201_varlearn"]
+__all__ = ['DenseNet121',"DenseNet169","DenseNet201"]
 class Bottleneck(nn.Module):
     def __init__(self, in_planes, growth_rate):
         super(Bottleneck, self).__init__()
-        self.bn1 = VarLearn(in_planes)
+        self.bn1 = nn.BatchNorm2d(in_planes)
         self.conv1 = nn.Conv2d(in_planes, 4*growth_rate, kernel_size=1, bias=False)
-        self.bn2 = VarLearn(4*growth_rate)
+        self.bn2 = nn.BatchNorm2d(4*growth_rate)
         self.conv2 = nn.Conv2d(4*growth_rate, growth_rate, kernel_size=3, padding=1, bias=False)
 
     def forward(self, x):
@@ -26,7 +26,7 @@ class Bottleneck(nn.Module):
 class Transition(nn.Module):
     def __init__(self, in_planes, out_planes):
         super(Transition, self).__init__()
-        self.bn = VarLearn(in_planes)
+        self.bn = nn.BatchNorm2d(in_planes)
         self.conv = nn.Conv2d(in_planes, out_planes, kernel_size=1, bias=False)
 
     def forward(self, x):
@@ -64,7 +64,7 @@ class DenseNet(nn.Module):
         self.dense4 = self._make_dense_layers(block, num_planes, nblocks[3])
         num_planes += nblocks[3]*growth_rate
 
-        self.bn = VarLearn(num_planes)
+        self.bn = nn.BatchNorm2d(num_planes)
         self.linear = nn.Linear(num_planes, num_classes)
 
     def _make_dense_layers(self, block, in_planes, nblock):
@@ -85,23 +85,23 @@ class DenseNet(nn.Module):
         out = self.linear(out)
         return out
 
-def DenseNet121_varlearn(**kwargs):
+def DenseNet121(**kwargs):
     return DenseNet(Bottleneck, [6,12,24,16], growth_rate=32)
 
-def DenseNet169_varlearn(**kwargs):
+def DenseNet169(**kwargs):
     return DenseNet(Bottleneck, [6,12,32,32], growth_rate=32)
 
-def DenseNet201_varlearn(**kwargs):
+def DenseNet201(**kwargs):
     return DenseNet(Bottleneck, [6,12,48,32], growth_rate=32)
 
-def DenseNet161_varlearn(**kwargs):
+def DenseNet161(**kwargs):
     return DenseNet(Bottleneck, [6,12,36,24], growth_rate=48)
 
-def densenet_cifar_varlearn(**kwargs):
+def densenet_cifar(**kwargs):
     return DenseNet(Bottleneck, [6,12,24,16], growth_rate=12)
 
 def test():
-    net = densenet_cifar_varlearn()
+    net = densenet_cifar()
     x = torch.randn(1,3,32,32)
     y = net(x)
     print(y)
