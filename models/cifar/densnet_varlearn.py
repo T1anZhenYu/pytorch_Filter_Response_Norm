@@ -86,19 +86,29 @@ class DenseNet(nn.Module):
         return out
 
 def DenseNet121_varlearn(**kwargs):
-    return DenseNet(Bottleneck, [6,12,24,16], growth_rate=32)
+    if "num_classes" in kwargs:
+        num_classes = kwargs["num_classes"]
+    return DenseNet(Bottleneck, [6,12,24,16], growth_rate=32,num_classes=num_classes)
 
 def DenseNet169_varlearn(**kwargs):
-    return DenseNet(Bottleneck, [6,12,32,32], growth_rate=32)
+    if "num_classes" in kwargs:
+        num_classes = kwargs["num_classes"]
+    return DenseNet(Bottleneck, [6,12,32,32], growth_rate=32,num_classes=num_classes)
 
 def DenseNet201_varlearn(**kwargs):
-    return DenseNet(Bottleneck, [6,12,48,32], growth_rate=32)
+    if "num_classes" in kwargs:
+        num_classes = kwargs["num_classes"]
+    return DenseNet(Bottleneck, [6,12,48,32], growth_rate=32,num_classes=num_classes)
 
 def DenseNet161_varlearn(**kwargs):
-    return DenseNet(Bottleneck, [6,12,36,24], growth_rate=48)
+    if "num_classes" in kwargs:
+        num_classes = kwargs["num_classes"]
+    return DenseNet(Bottleneck, [6,12,36,24], growth_rate=48,num_classes=num_classes)
 
 def densenet_cifar_varlearn(**kwargs):
-    return DenseNet(Bottleneck, [6,12,24,16], growth_rate=12)
+    if "num_classes" in kwargs:
+        num_classes = kwargs["num_classes"]
+    return DenseNet(Bottleneck, [6,12,24,16], growth_rate=12,num_classes=num_classes)
 
 def test():
     net = densenet_cifar_varlearn()
