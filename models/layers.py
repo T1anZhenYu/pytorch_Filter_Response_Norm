@@ -909,7 +909,7 @@ class VarFix(nn.Module):
         self.running_var = torch.ones(num_features)
         # self.running_var = torch.Tensor(1, num_features, 1, 1)
         self.uplimit = nn.parameter.Parameter(
-                torch.DoubleTensor(num_features), requires_grad=True)
+                torch.DoubleTensor(num_features), requires_grad=False)
         self.downlimit = nn.parameter.Parameter(
                 torch.DoubleTensor( num_features), requires_grad=True)
 
@@ -940,7 +940,7 @@ class VarFix(nn.Module):
             # var = (torch.pow((channelMax - channelMin), 2)).detach() / (2 * math.log(n))
             # print(var.shape)
             # var = torch.min(var,self.downlimit)
-            var = 5
+            var = self.uplimit
             mean = x.mean(dim=(0, 2, 3))
             # print(var.shape)
             self.running_mean.copy_(self.momentum * mean \
