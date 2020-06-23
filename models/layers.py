@@ -846,7 +846,7 @@ class VarLearn(nn.Module):
         nn.init.ones_(self.running_var)
         nn.init.zeros_(self.running_mean)
         nn.init.constant_(self.downlimit,0.1)
-        nn.init.constant_(self.uplimit, 25)
+        nn.init.constant_(self.uplimit, 2.5)
     def forward(self, x):
         # self._check_input_dim(x)
         self.running_mean = self.running_mean.double().to(x.device)
@@ -872,12 +872,12 @@ class VarLearn(nn.Module):
             # update running_var with unbiased var
             self.running_var.copy_(self.momentum * var \
                                    + (1 - self.momentum) * self.running_var)
-            y = (x - mean[None, :, None, None]) / (torch.sqrt(torch.sqrt(var[None, :, None, None])) + self.eps)
+            y = (x - mean[None, :, None, None]) / (var[None, :, None, None] + self.eps)
 
         else:
             mean = self.running_mean
             var = self.running_var
-            y = (x - mean[None, :, None, None]) / (torch.sqrt(torch.sqrt(var[None, :, None, None]))  + self.eps)
+            y = (x - mean[None, :, None, None]) / (var[None, :, None, None]  + self.eps)
         if self.affine:
             y = y * self.weight[None, :, None, None] + self.bias[None, :, None, None]
         y = y.float()
