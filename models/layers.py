@@ -872,7 +872,7 @@ class VarLearn(nn.Module):
             # update running_var with unbiased var
             self.running_var.copy_(self.momentum * var \
                                    + (1 - self.momentum) * self.running_var)
-            y = (x - mean[None, :, None, None]) / (torch.sqrt(var[None, :, None, None] + self.eps))
+            y = (x - mean[None, :, None, None]) / (var[None, :, None, None] + self.eps)
 
         else:
             mean = self.running_mean
