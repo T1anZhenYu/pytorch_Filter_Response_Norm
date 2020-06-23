@@ -846,7 +846,7 @@ class VarLearn(nn.Module):
         nn.init.ones_(self.running_var)
         nn.init.zeros_(self.running_mean)
         nn.init.constant_(self.downlimit,0.1)
-        nn.init.constant_(self.uplimit, 5)
+        nn.init.constant_(self.uplimit, 25)
     def forward(self, x):
         # self._check_input_dim(x)
         self.running_mean = self.running_mean.double().to(x.device)
