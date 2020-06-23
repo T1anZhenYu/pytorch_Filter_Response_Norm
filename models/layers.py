@@ -877,7 +877,7 @@ class VarLearn(nn.Module):
         else:
             mean = self.running_mean
             var = self.running_var
-            y = (x - mean[None, :, None, None]) / (torch.sqrt(var[None, :, None, None] + self.eps))
+            y = (x - mean[None, :, None, None]) / (var[None, :, None, None] + self.eps)
         if self.affine:
             y = y * self.weight[None, :, None, None] + self.bias[None, :, None, None]
         y = y.float()
