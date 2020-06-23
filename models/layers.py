@@ -905,13 +905,13 @@ class VarFix(nn.Module):
             self.weight = nn.parameter.Parameter(
                 torch.Tensor(1, num_features, 1, 1), requires_grad=False)
         self.eps = eps
-        self.running_mean = torch.zeros(num_features)
-        self.running_var = torch.ones(num_features)
+        self.running_mean = torch.zeros(1, num_features, 1, 1)
+        self.running_var = torch.ones(1, num_features, 1, 1)
         # self.running_var = torch.Tensor(1, num_features, 1, 1)
         self.uplimit = nn.parameter.Parameter(
-                torch.DoubleTensor(num_features), requires_grad=False)
+            torch.DoubleTensor(1, num_features, 1, 1), requires_grad=False)
         self.downlimit = nn.parameter.Parameter(
-                torch.DoubleTensor( num_features), requires_grad=True)
+            torch.DoubleTensor(1, num_features, 1, 1), requires_grad=False)
 
         self.momentum = momentum
         self.reset_parameters()
@@ -921,40 +921,39 @@ class VarFix(nn.Module):
         nn.init.zeros_(self.bias)
         nn.init.ones_(self.running_var)
         nn.init.zeros_(self.running_mean)
-        nn.init.constant_(self.downlimit,0.1)
+        nn.init.constant_(self.downlimit, 0.1)
         nn.init.constant_(self.uplimit, 5)
-    def forward(self, x):
-        # self._check_input_dim(x)
-        self.running_mean = self.running_mean.double().to(x.device)
-        self.running_var = self.running_var.double().to(x.device)
-        x = x.double()
-        n = x.numel() / (x.size(1))
-        if self.training:
-            # print('x', x)
 
-            # channelMax = \
-            #     torch.max(torch.max(torch.max(x, 0)[0], -1, )[0], -1, )[0]
-            # channelMin = \
-            #     torch.min(torch.min(torch.min(x, 0)[0], -1, )[0], -1, )[0]
-            # print(channelMax.shape)
-            # var = (torch.pow((channelMax - channelMin), 2)).detach() / (2 * math.log(n))
-            # print(var.shape)
-            # var = torch.min(var,self.downlimit)
-            var = self.uplimit
-            mean = x.mean(dim=(0, 2, 3))
-            # print(var.shape)
-            self.running_mean.copy_(self.momentum * mean \
-                                    + (1 - self.momentum) * self.running_mean)
-            # update running_var with unbiased var
-            self.running_var.copy_(self.momentum * var \
-                                   + (1 - self.momentum) * self.running_var)
-            y = (x - mean[None, :, None, None]) / (torch.sqrt(var[None, :, None, None] + self.eps))
+    def forward(self, x):
+        self.running_var = self.running_var.to(x.device).double()
+        self.running_mean = self.running_mean.to(x.device).double()
+        x = x.double()
+        n = torch.tensor(x.numel() / (x.size(1)))
+        if self.training:
+            mean = x.mean(dim=(0, 2, 3), keepdim=True)
+            var = ((x - mean).pow(2).mean(dim=(0, 2, 3), keepdim=True)).detach()
+            var = torch.min(var, self.downlimit)
+            var = torch.max(var, self.uplimit)
+            # print("mean device:",mean.device)
+            # print("running mean device:",self.running_mean.device)
+            # print("runing device:",self.running_mean.device)
+            with torch.no_grad():
+                self.running_mean = self.momentum * mean \
+                                    + (1 - self.momentum) * self.running_mean
+                self.running_mean = self.running_mean.float()
+                # update running_var with unbiased var
+                self.running_var = self.momentum * var * n / (n - 1) \
+                                   + (1 - self.momentum) * self.running_var
+                self.running_var = self.running_var.float()
+            # var = torch.max(self.limit,var)
+            x = (x - mean) / torch.sqrt(var + self.eps)
+            # self.running_var = (self.momentum) * self.running_var + (1 - self.momentum) * var
 
         else:
-            mean = self.running_mean
-            var = self.running_var
-            y = (x - mean[None, :, None, None]) / (torch.sqrt(var[None, :, None, None] + self.eps))
+            # var = torch.max(self.limit,self.running_var)
+            x = (x - self.running_mean) / (torch.sqrt(self.running_var +
+                                                      self.eps))
         if self.affine:
-            y = y * self.weight[None, :, None, None] + self.bias[None, :, None, None]
-        y = y.float()
-        return y
+            x = x * self.weight.double() + self.bias.double()
+        x = x.float()
+        return x
