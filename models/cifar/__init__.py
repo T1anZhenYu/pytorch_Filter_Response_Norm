@@ -13,3 +13,4 @@ from .resnet_myRangeBN import *
 from .resnet_DetachClipRangeBN import *
 from .resnet_DetachClipRangeBNNoMean import *
 from .resnet_varlearn import *
+from .resnet_varfix import *
