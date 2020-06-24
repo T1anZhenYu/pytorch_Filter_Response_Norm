@@ -856,16 +856,19 @@ class VarLearn(nn.Module):
         if self.training:
             # print('x', x)
 
-            channelMax = \
-                torch.max(torch.max(torch.max(x, 0)[0], -1, )[0], -1, )[0]
-            channelMin = \
-                torch.min(torch.min(torch.min(x, 0)[0], -1, )[0], -1, )[0]
+            # channelMax = \
+            #     torch.max(torch.max(torch.max(x, 0)[0], -1, )[0], -1, )[0]
+            # channelMin = \
+            #     torch.min(torch.min(torch.min(x, 0)[0], -1, )[0], -1, )[0]
             # print(channelMax.shape)
             # var = (torch.pow((channelMax - channelMin), 2)).detach() / (2 * math.log(n))
             # print(var.shape)
             # var = torch.min(var,self.downlimit)
-            var = self.uplimit
             mean = x.mean(dim=(0, 2, 3))
+
+            var_ = ((x - mean).pow(2).mean(dim=(0, 2, 3), keepdim=True)).detach()
+            print(mean(var_))
+            var = self.uplimit
             # print(var.shape)
             self.running_mean.copy_(self.momentum * mean \
                                     + (1 - self.momentum) * self.running_mean)
