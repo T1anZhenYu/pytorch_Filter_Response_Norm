@@ -808,7 +808,7 @@ class DetachClipRangeBNNoMean(nn.Module):
         y = y.float()
         return y
 class VarLearn(nn.Module):
-    def __init__(self, num_features, eps=1e-05, momentum=0.9, affine=True,initvaule=3):
+    def __init__(self, num_features, eps=1e-05, momentum=0.9, affine=True,initvaule=5):
         """
         Input Variables:
         ----------------
