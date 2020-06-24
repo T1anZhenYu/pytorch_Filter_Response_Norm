@@ -42,15 +42,15 @@ class VGG(nn.Module):
 def vgg11_varlearn(**kwargs):
     if "num_classes" in kwargs:
         num_classes = kwargs["num_classes"]
-    return VGG("vgg11",num_classes=num_classes)
+    return VGG("VGG11",num_classes=num_classes)
 def vgg13_varlearn(**kwargs):
     if "num_classes" in kwargs:
         num_classes = kwargs["num_classes"]
-    return VGG("vgg13",num_classes=num_classes)
+    return VGG("VGG13",num_classes=num_classes)
 def vgg16_varlearn(**kwargs):
     if "num_classes" in kwargs:
         num_classes = kwargs["num_classes"]
-    return VGG("vgg16",num_classes=num_classes)
+    return VGG("VGG16",num_classes=num_classes)
 
 def test():
     net = VGG('VGG11')
