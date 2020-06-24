@@ -33,7 +33,7 @@ class VGG(nn.Module):
                 layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
             else:
                 layers += [nn.Conv2d(in_channels, x, kernel_size=3, padding=1),
-                           VarLearn(x,affine=False,initvaule=0.1),
+                           VarLearn(x,affine=False,initvaule=0.5),
                            nn.ReLU(inplace=True)]
                 in_channels = x
         layers += [nn.AvgPool2d(kernel_size=1, stride=1)]
