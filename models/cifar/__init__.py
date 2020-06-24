@@ -6,3 +6,4 @@ from .resnet_varlearn import *
 
 from .densnet_varlearn import *
 from .densnet import *
+from .vgg import *
