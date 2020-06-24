@@ -18,7 +18,10 @@ class VGG(nn.Module):
         super(VGG, self).__init__()
         self.features = self._make_layers(cfg[vgg_name])
         self.classifier = nn.Linear(512, num_classes)
-
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+                m.weight.data.normal_(0, math.sqrt(2. / n))
     def forward(self, x):
         out = self.features(x)
         out = out.view(out.size(0), -1)
