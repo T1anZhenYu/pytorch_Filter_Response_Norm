@@ -866,9 +866,9 @@ class VarLearn(nn.Module):
             # var = torch.min(var,self.downlimit)
             mean = x.mean(dim=(0, 2, 3))
 
-            var_ = ((x - mean[None, :, None, None]).pow(2).mean(dim=(0, 2, 3))).detach()
-            print(mean(var_))
-            var = self.uplimit
+            # var_ = ((x - mean[None, :, None, None]).pow(2).mean(dim=(0, 2, 3))).detach()
+            # print(mean(var_))
+            var = self.uplimit+0.1
             # print(var.shape)
             self.running_mean.copy_(self.momentum * mean \
                                     + (1 - self.momentum) * self.running_mean)
