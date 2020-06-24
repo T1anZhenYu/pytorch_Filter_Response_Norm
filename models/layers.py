@@ -835,7 +835,7 @@ class VarLearn(nn.Module):
         self.uplimit = nn.parameter.Parameter(
                 torch.DoubleTensor(num_features), requires_grad=True)
         self.downlimit = nn.parameter.Parameter(
-                torch.DoubleTensor( num_features), requires_grad=True)
+                torch.DoubleTensor( num_features), requires_grad=False)
         self.initvalue = initvaule
         self.momentum = momentum
         self.reset_parameters()
@@ -845,7 +845,7 @@ class VarLearn(nn.Module):
         nn.init.zeros_(self.bias)
         nn.init.ones_(self.running_var)
         nn.init.zeros_(self.running_mean)
-        nn.init.constant_(self.downlimit,0.1)
+        nn.init.constant_(self.downlimit,100)
         nn.init.constant_(self.uplimit, self.initvalue)
     def forward(self, x):
         # self._check_input_dim(x)
@@ -868,7 +868,7 @@ class VarLearn(nn.Module):
 
             # var_ = ((x - mean[None, :, None, None]).pow(2).mean(dim=(0, 2, 3))).detach()
             # print(mean(var_))
-            var = torch.min(torch.abs(self.uplimit)+0.1,100)
+            var = torch.min(torch.abs(self.uplimit)+0.1,self.downlimit)
             # print(var.shape)
             self.running_mean.copy_(self.momentum * mean \
                                     + (1 - self.momentum) * self.running_mean)
