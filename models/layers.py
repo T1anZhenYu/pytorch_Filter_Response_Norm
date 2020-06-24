@@ -808,7 +808,7 @@ class DetachClipRangeBNNoMean(nn.Module):
         y = y.float()
         return y
 class VarLearn(nn.Module):
-    def __init__(self, num_features, eps=1e-05, momentum=0.9, affine=True,initvaule=5):
+    def __init__(self, num_features, eps=1e-05, momentum=0.9, affine=True,initvaule=25):
         """
         Input Variables:
         ----------------
@@ -865,12 +865,12 @@ class VarLearn(nn.Module):
             # update running_var with unbiased var
             self.running_var.copy_(self.momentum * var \
                                    + (1 - self.momentum) * self.running_var)
-            y = (x - mean[None, :, None, None]) / (torch.sqrt(var[None, :, None, None]) + self.eps)
+            y = (x - mean[None, :, None, None]) / (torch.sqrt(torch.sqrt(var[None, :, None, None])) + self.eps)
 
         else:
             mean = self.running_mean
             var = self.running_var
-            y = (x - mean[None, :, None, None]) / (torch.sqrt(var[None, :, None, None])  + self.eps)
+            y = (x - mean[None, :, None, None]) / (torch.sqrt(torch.sqrt(var[None, :, None, None]))  + self.eps)
         if self.affine:
             y = y * self.weight[None, :, None, None] + self.bias[None, :, None, None]
         y = y.float()
