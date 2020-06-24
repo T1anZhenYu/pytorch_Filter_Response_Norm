@@ -808,7 +808,7 @@ class DetachClipRangeBNNoMean(nn.Module):
         y = y.float()
         return y
 class VarLearn(nn.Module):
-    def __init__(self, num_features, eps=1e-05, momentum=0.9, affine=True):
+    def __init__(self, num_features, eps=1e-05, momentum=0.9, affine=True,initvaule=3):
         """
         Input Variables:
         ----------------
@@ -836,7 +836,7 @@ class VarLearn(nn.Module):
                 torch.DoubleTensor(num_features), requires_grad=True)
         self.downlimit = nn.parameter.Parameter(
                 torch.DoubleTensor( num_features), requires_grad=True)
-
+        self.initvalue = initvaule
         self.momentum = momentum
         self.reset_parameters()
 
@@ -846,7 +846,7 @@ class VarLearn(nn.Module):
         nn.init.ones_(self.running_var)
         nn.init.zeros_(self.running_mean)
         nn.init.constant_(self.downlimit,0.1)
-        nn.init.constant_(self.uplimit, 2.5)
+        nn.init.constant_(self.uplimit, self.initvalue)
     def forward(self, x):
         # self._check_input_dim(x)
         self.running_mean = self.running_mean.double().to(x.device)
