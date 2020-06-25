@@ -509,7 +509,7 @@ class OfficialDetachVar(nn.Module):
 
 
 class VarLearn(nn.Module):
-    def __init__(self, num_features, eps=1e-05, momentum=0.9, affine=False, initvaule=25):
+    def __init__(self, num_features, eps=1e-05, momentum=0.9, affine=False, initvalue=25):
         """
         Input Variables:
         ----------------
@@ -533,7 +533,7 @@ class VarLearn(nn.Module):
         assert affine==False, 'NOT Support Affine Yet'
         # constant
         self.eps = eps
-        self.initvalue = initvaule
+        self.initvalue = initvalue
         self.momentum = momentum
 
         # buffer
@@ -545,7 +545,7 @@ class VarLearn(nn.Module):
 
         # parameter
         self.register_parameter('trainable_var',
-            self.initvaule*torch.ones(num_features))
+            self.initvalue*torch.ones(num_features))
 
 
 
