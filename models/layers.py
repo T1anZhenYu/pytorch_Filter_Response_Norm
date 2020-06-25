@@ -553,14 +553,14 @@ class VarLearn(nn.Module):
             #     / (torch.sqrt(torch.sqrt(self.trainable_var[None, :, None, None])) + self.eps)
             x.\
             sub_(mean[None, :, None, None]).\
-            div_(torch.pow(var, exponent=1/4.) + self.eps)
+            div_(torch.pow(var[None, :, None, None], exponent=1/4.) + self.eps)
 
         else:
             mean = self.running_mean
             var = self.running_var
             x.\
             sub_(mean[None, :, None, None]).\
-            div_(torch.pow(var, exponent=1/4.) + self.eps)
+            div_(torch.pow(var[None, :, None, None], exponent=1/4.) + self.eps)
 
         return x
 
