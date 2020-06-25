@@ -509,7 +509,7 @@ class OfficialDetachVar(nn.Module):
 
 
 class VarLearn(nn.Module):
-    def __init__(self, num_features, eps=1e-05, momentum=0.9, affine=True,initvaule=25):
+    def __init__(self, num_features, eps=1e-05, momentum=0.9, affine=False, initvaule=25):
         """
         Input Variables:
         ----------------
@@ -518,63 +518,74 @@ class VarLearn(nn.Module):
         """
 
         super(VarLearn, self).__init__()
-        self.affine = affine
-        if self.affine:
-            self.bias = nn.parameter.Parameter(
-                torch.Tensor(1, num_features, 1, 1), requires_grad=True)
-            self.weight = nn.parameter.Parameter(
-                torch.Tensor(1, num_features, 1, 1), requires_grad=True)
-        else:
-            self.bias = nn.parameter.Parameter(
-                torch.Tensor(1, num_features, 1, 1), requires_grad=False)
-            self.weight = nn.parameter.Parameter(
-                torch.Tensor(1, num_features, 1, 1), requires_grad=False)
+        # self.affine = affine
+        # if self.affine:
+        #     self.bias = nn.parameter.Parameter(
+        #         torch.Tensor(1, num_features, 1, 1), requires_grad=True)
+        #     self.weight = nn.parameter.Parameter(
+        #         torch.Tensor(1, num_features, 1, 1), requires_grad=True)
+        # else:
+        #     self.bias = nn.parameter.Parameter(
+        #         torch.Tensor(1, num_features, 1, 1), requires_grad=False)
+        #     self.weight = nn.parameter.Parameter(
+        #         torch.Tensor(1, num_features, 1, 1), requires_grad=False)
+
+        assert affine==False, 'NOT Support Affine Yet'
+        # constant
         self.eps = eps
-        self.running_mean = torch.zeros(num_features)
-        self.running_var = torch.ones(num_features)
-        # self.running_var = torch.Tensor(1, num_features, 1, 1)
-        self.uplimit = nn.parameter.Parameter(
-                torch.DoubleTensor(num_features), requires_grad=True)
-        self.downlimit = nn.parameter.Parameter(
-                torch.DoubleTensor( num_features), requires_grad=False)
         self.initvalue = initvaule
         self.momentum = momentum
-        self.reset_parameters()
 
-    def reset_parameters(self):
-        nn.init.ones_(self.weight)
-        nn.init.zeros_(self.bias)
-        nn.init.ones_(self.running_var)
-        nn.init.zeros_(self.running_mean)
-        nn.init.constant_(self.downlimit,100)
-        nn.init.constant_(self.uplimit, self.initvalue)
+        # buffer
+        self.register_buffer('running_mean', torch.zeros(num_features))
+        self.register_buffer('running_var', torch.ones(num_features))
+        # self.running_mean = torch.zeros(num_features)
+        # self.running_var = torch.ones(num_features)
+        # self.running_var = torch.Tensor(1, num_features, 1, 1)
+
+        # parameter
+        self.register_parameter('trainable_var',
+            self.initvaule*torch.ones(num_features))
+
+
+
+        # self.reset_parameters()
+
+    # def reset_parameters(self):
+    #     # nn.init.ones_(self.weight)
+    #     # nn.init.zeros_(self.bias)
+    #     # nn.init.ones_(self.running_var)
+    #     # nn.init.zeros_(self.running_mean)
+    #     # nn.init.constant_(self.downlimit,100)
+    #     nn.init.constant_(self.trainable_var, self.initvalue)
     def forward(self, x):
         # self._check_input_dim(x)
-        self.running_mean = self.running_mean.double().to(x.device)
-        self.running_var = self.running_var.double().to(x.device)
-        x = x.double()
-        # n = x.numel() / (x.size(1))
+        # self.running_mean = self.running_mean.double().to(x.device)
+        # self.running_var = self.running_var.double().to(x.device)
+        # x = x.double()
+        n = x.numel() / (x.size(1))
         if self.training:
 
             mean = x.mean(dim=(0, 2, 3))
 
 
-            var = self.uplimit
+            # var = self.uplimit
 
             self.running_mean.copy_(self.momentum * mean \
                                     + (1 - self.momentum) * self.running_mean)
             # update running_var with unbiased var
-            self.running_var.copy_(self.momentum * var \
+            self.running_var.copy_(self.momentum * self.trainable_var \
                                    + (1 - self.momentum) * self.running_var)
-            x = (x - mean[None, :, None, None]) / (torch.sqrt(torch.sqrt(var[None, :, None, None])) + self.eps)
+            x = (x - mean[None, :, None, None]) \
+                / (torch.sqrt(torch.sqrt(self.trainable_var[None, :, None, None])) + self.eps)
 
         else:
             mean = self.running_mean
             var = self.running_var
             x = (x - mean[None, :, None, None]) / (torch.sqrt(torch.sqrt(var[None, :, None, None]))  + self.eps)
-        if self.affine:
-            x = x * self.weight[None, :, None, None] + self.bias[None, :, None, None]
-        x = x.float()
+        # if self.affine:
+        #     y = y * self.weight[None, :, None, None] + self.bias[None, :, None, None]
+        # y = y.float()
         return x
 
 # class VarFix(nn.Module):
