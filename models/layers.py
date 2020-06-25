@@ -553,7 +553,7 @@ class VarLearn(nn.Module):
         self.running_mean = self.running_mean.double().to(x.device)
         self.running_var = self.running_var.double().to(x.device)
         x = x.double()
-        n = x.numel() / (x.size(1))
+        # n = x.numel() / (x.size(1))
         if self.training:
 
             mean = x.mean(dim=(0, 2, 3))
@@ -566,16 +566,16 @@ class VarLearn(nn.Module):
             # update running_var with unbiased var
             self.running_var.copy_(self.momentum * var \
                                    + (1 - self.momentum) * self.running_var)
-            y = (x - mean[None, :, None, None]) / (torch.sqrt(torch.sqrt(var[None, :, None, None])) + self.eps)
+            x = (x - mean[None, :, None, None]) / (torch.sqrt(torch.sqrt(var[None, :, None, None])) + self.eps)
 
         else:
             mean = self.running_mean
             var = self.running_var
-            y = (x - mean[None, :, None, None]) / (torch.sqrt(torch.sqrt(var[None, :, None, None]))  + self.eps)
+            x = (x - mean[None, :, None, None]) / (torch.sqrt(torch.sqrt(var[None, :, None, None]))  + self.eps)
         if self.affine:
-            y = y * self.weight[None, :, None, None] + self.bias[None, :, None, None]
-        y = y.float()
-        return y
+            x = x * self.weight[None, :, None, None] + self.bias[None, :, None, None]
+        x = x.float()
+        return x
 
 # class VarFix(nn.Module):
 #     def __init__(self, num_features, eps=1e-05, momentum=0.9, affine=True):
