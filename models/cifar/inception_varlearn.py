@@ -1,13 +1,14 @@
 import torch
 import torch.nn as nn
 
-__all__ = ['inceptionv3']
+from ..layers import *
+__all__ = ['inceptionv3_varlearn']
 class BasicConv2d(nn.Module):
 
     def __init__(self, input_channels, output_channels, **kwargs):
         super().__init__()
         self.conv = nn.Conv2d(input_channels, output_channels, bias=False, **kwargs)
-        self.bn = nn.BatchNorm2d(output_channels,affine=False)
+        self.bn = VarLearn(output_channels,affine=False,initvaule=3)
         self.relu = nn.ReLU(inplace=True)
 
     def forward(self, x):
@@ -318,5 +319,5 @@ class InceptionV3(nn.Module):
         return x
 
 
-def inceptionv3(**kwargs):
+def inceptionv3_varlearn(**kwargs):
     return InceptionV3(**kwargs)

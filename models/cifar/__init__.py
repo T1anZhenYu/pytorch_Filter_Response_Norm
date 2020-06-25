@@ -8,3 +8,5 @@ from .densnet_varlearn import *
 from .densnet import *
 from .vgg import *
 from .vgg_varlearn import *
+from .inception import  *
+from .inception_varlearn import *
