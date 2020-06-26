@@ -11,9 +11,9 @@ __all__ = ['DenseNet121_varlearn',"DenseNet169_varlearn","DenseNet201_varlearn"]
 class Bottleneck(nn.Module):
     def __init__(self, in_planes, growth_rate):
         super(Bottleneck, self).__init__()
-        self.bn1 = VarLearn(in_planes)
+        self.bn1 = VarLearn(in_planes,initvalue=2)
         self.conv1 = nn.Conv2d(in_planes, 4*growth_rate, kernel_size=1, bias=False)
-        self.bn2 = VarLearn(4*growth_rate)
+        self.bn2 = VarLearn(4*growth_rate,initvalue=2)
         self.conv2 = nn.Conv2d(4*growth_rate, growth_rate, kernel_size=3, padding=1, bias=False)
 
     def forward(self, x):
@@ -26,7 +26,7 @@ class Bottleneck(nn.Module):
 class Transition(nn.Module):
     def __init__(self, in_planes, out_planes):
         super(Transition, self).__init__()
-        self.bn = VarLearn(in_planes)
+        self.bn = VarLearn(in_planes,initvalue=2)
         self.conv = nn.Conv2d(in_planes, out_planes, kernel_size=1, bias=False)
 
     def forward(self, x):
@@ -64,7 +64,7 @@ class DenseNet(nn.Module):
         self.dense4 = self._make_dense_layers(block, num_planes, nblocks[3])
         num_planes += nblocks[3]*growth_rate
 
-        self.bn = VarLearn(num_planes)
+        self.bn = VarLearn(num_planes,initvalue=2)
         self.linear = nn.Linear(num_planes, num_classes)
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
