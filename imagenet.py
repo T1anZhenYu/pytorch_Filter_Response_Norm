@@ -3,7 +3,7 @@ Training script for ImageNet
 Copyright (c) Wei YANG, 2017
 '''
 from __future__ import print_function
-import math
+
 import argparse
 import os
 import shutil
@@ -20,8 +20,8 @@ import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import torchvision.models as models
 import models.imagenet as customized_models
-from progress.bar import Bar
-from utils import Logger, AverageMeter, accuracy, mkdir_p, savefig
+
+from utils import Bar, Logger, AverageMeter, accuracy, mkdir_p, savefig
 
 # Models
 default_model_names = sorted(name for name in models.__dict__
@@ -42,9 +42,6 @@ model_names = default_model_names + customized_models_names
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 
 # Datasets
-# ---------------------------------
-parser.add_argument('--dataset', default='cifar10', type=str)
-# ------------------------------
 parser.add_argument('-d', '--data', default='path to dataset', type=str)
 parser.add_argument('-j', '--workers', default=32, type=int, metavar='N',
                     help='number of data loading workers (default: 4)')
@@ -93,13 +90,6 @@ parser.add_argument('--pretrained', dest='pretrained', action='store_true',
 parser.add_argument('--gpu-id', default='0', type=str,
                     help='id(s) for CUDA_VISIBLE_DEVICES')
 
-parser.add_argument('--ramp-up', default=50, type=int,
-                    help='ramp-up epochs')
-parser.add_argument('--cos', default=False, type=bool,help='using cosine decay schedule?')
-parser.add_argument('--lr_max', default=0.1, type=float,
-                    help='maximum lr')
-parser.add_argument('--lr_min', default=0.000001, type=float,
-                    help='minimum lr')
 args = parser.parse_args()
 state = {k: v for k, v in args._get_kwargs()}
 
@@ -130,52 +120,25 @@ def main():
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
 
-    # -------------------------------------
-    #cifar dataset
-    if args.dataset == 'cifar10':
-        dataloader = datasets.CIFAR10
-        num_classes = 10
-    else:
-        dataloader = datasets.CIFAR100
-        num_classes = 100
+    train_loader = torch.utils.data.DataLoader(
+        datasets.ImageFolder(traindir, transforms.Compose([
+            transforms.RandomSizedCrop(224),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            normalize,
+        ])),
+        batch_size=args.train_batch, shuffle=True,
+        num_workers=args.workers, pin_memory=True)
 
-    transform_train = transforms.Compose([
-        transforms.RandomCrop(32, padding=4),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-    ])
-
-    transform_test = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-    ])
-    trainset = dataloader(root='./data', train=True, download=True, transform=transform_train)
-    train_loader = data.DataLoader(trainset, batch_size=args.train_batch, shuffle=True, num_workers=args.workers)
-
-    testset = dataloader(root='./data', train=False, download=False, transform=transform_test)
-    val_loader = data.DataLoader(testset, batch_size=args.test_batch, shuffle=False, num_workers=args.workers)
-    # -----------------------------------------------------
-
-    # train_loader = torch.utils.data.DataLoader(
-    #     datasets.ImageFolder(traindir, transforms.Compose([
-    #         transforms.RandomSizedCrop(224),
-    #         transforms.RandomHorizontalFlip(),
-    #         transforms.ToTensor(),
-    #         normalize,
-    #     ])),
-    #     batch_size=args.train_batch, shuffle=True,
-    #     num_workers=args.workers, pin_memory=True)
-    #
-    # val_loader = torch.utils.data.DataLoader(
-    #     datasets.ImageFolder(valdir, transforms.Compose([
-    #         transforms.Scale(256),
-    #         transforms.CenterCrop(224),
-    #         transforms.ToTensor(),
-    #         normalize,
-    #     ])),
-    #     batch_size=args.test_batch, shuffle=False,
-    #     num_workers=args.workers, pin_memory=True)
+    val_loader = torch.utils.data.DataLoader(
+        datasets.ImageFolder(valdir, transforms.Compose([
+            transforms.Scale(256),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            normalize,
+        ])),
+        batch_size=args.test_batch, shuffle=False,
+        num_workers=args.workers, pin_memory=True)
 
     # create model
     if args.pretrained:
@@ -188,9 +151,7 @@ def main():
                 )
     else:
         print("=> creating model '{}'".format(args.arch))
-        model = models.__dict__[args.arch](
-            num_classes=num_classes,
-        )
+        model = models.__dict__[args.arch]()
 
     if args.arch.startswith('alexnet') or args.arch.startswith('vgg'):
         model.features = torch.nn.DataParallel(model.features)
@@ -235,8 +196,8 @@ def main():
 
         print('\nEpoch: [%d | %d] LR: %f' % (epoch + 1, args.epochs, state['lr']))
 
-        train_loss, train_acc = train(train_loader, model, criterion, optimizer, epoch, use_cuda,args.epochs)
-        test_loss, test_acc = test(val_loader, model, criterion, epoch, use_cuda, args.epochs)
+        train_loss, train_acc = train(train_loader, model, criterion, optimizer, epoch, use_cuda)
+        test_loss, test_acc = test(val_loader, model, criterion, epoch, use_cuda)
 
         # append logger file
         logger.append([state['lr'], train_loss, test_loss, train_acc, test_acc])
@@ -257,7 +218,7 @@ def main():
     print('Best acc:')
     print(best_acc)
 
-def train(train_loader, model, criterion, optimizer, epoch, use_cuda, total_epoch):
+def train(train_loader, model, criterion, optimizer, epoch, use_cuda):
     # switch to train mode
     model.train()
     torch.set_grad_enabled(True)
@@ -282,14 +243,14 @@ def train(train_loader, model, criterion, optimizer, epoch, use_cuda, total_epoc
         inputs, targets = torch.autograd.Variable(inputs), torch.autograd.Variable(targets)
 
         # compute output
-        outputs = model(inputs, epoch, total_epoch)
+        outputs = model(inputs)
         loss = criterion(outputs, targets)
 
         # measure accuracy and record loss
         prec1, prec5 = accuracy(outputs.data, targets.data, topk=(1, 5))
-        losses.update(loss.data, inputs.size(0))
-        top1.update(prec1, inputs.size(0))
-        top5.update(prec5, inputs.size(0))
+        losses.update(loss.data[0], inputs.size(0))
+        top1.update(prec1[0], inputs.size(0))
+        top5.update(prec5[0], inputs.size(0))
 
         # compute gradient and do SGD step
         optimizer.zero_grad()
@@ -316,7 +277,7 @@ def train(train_loader, model, criterion, optimizer, epoch, use_cuda, total_epoc
     bar.finish()
     return (losses.avg, top1.avg)
 
-def test(val_loader, model, criterion, epoch, use_cuda, total_epoch):
+def test(val_loader, model, criterion, epoch, use_cuda):
     global best_acc
 
     batch_time = AverageMeter()
@@ -340,14 +301,14 @@ def test(val_loader, model, criterion, epoch, use_cuda, total_epoch):
         inputs, targets = torch.autograd.Variable(inputs, volatile=True), torch.autograd.Variable(targets)
 
         # compute output
-        outputs = model(inputs, epoch, total_epoch)
+        outputs = model(inputs)
         loss = criterion(outputs, targets)
 
         # measure accuracy and record loss
         prec1, prec5 = accuracy(outputs.data, targets.data, topk=(1, 5))
-        losses.update(loss.data, inputs.size(0))
-        top1.update(prec1, inputs.size(0))
-        top5.update(prec5, inputs.size(0))
+        losses.update(loss.data[0], inputs.size(0))
+        top1.update(prec1[0], inputs.size(0))
+        top5.update(prec5[0], inputs.size(0))
 
         # measure elapsed time
         batch_time.update(time.time() - end)
@@ -377,26 +338,8 @@ def save_checkpoint(state, is_best, checkpoint='checkpoint', filename='checkpoin
 
 def adjust_learning_rate(optimizer, epoch):
     global state
-    lr_min = args.lr_min
-    lr_max = 0.1 * args.train_batch / 256
-    if args.cos:
-        if epoch <= args.ramp_up:
-            lr = lr_min + 0.5*(lr_max - lr_min)*(1 - math.cos(epoch/args.ramp_up*math.pi))
-        else :
-            lr = lr_min + 0.5*(lr_max - lr_min)*\
-                 (1 + math.cos((epoch - args.ramp_up)/(args.epochs - args.ramp_up)*math.pi))
-        # if lr <0.0001:
-        #     lr = 0.0001
-        state['lr'] = lr
-
-        for param_group in optimizer.param_groups:
-            param_group['lr'] = lr
-    else:
-        print('in linear decay')
-        if epoch == 0:
-            state['lr'] = args.lr_max
-        if epoch in args.schedule:
-            state['lr'] *= args.gamma
+    if epoch in args.schedule:
+        state['lr'] *= args.gamma
         for param_group in optimizer.param_groups:
             param_group['lr'] = state['lr']
 

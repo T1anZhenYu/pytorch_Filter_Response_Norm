@@ -23,7 +23,7 @@ from progress.bar import Bar
 import math
 from utils import Logger, AverageMeter, accuracy, mkdir_p, savefig
 import setting
-
+from models.layers import *
 model_names = sorted(name for name in models.__dict__
     if not name.startswith("__")
     and callable(models.__dict__[name]))
@@ -50,6 +50,8 @@ parser.add_argument('--schedule', type=int, nargs='+', default=[150, 225,300],
                         help='Decrease learning rate at these epochs.')
 parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
                     help='momentum')
+parser.add_argument('--standard_bn', action='store_true', help='use standard bn')
+parser.add_argument('--varlearn_initvalue', '-b', default=10, type=int)
 parser.add_argument('--weight-decay', '--wd', default=5e-4, type=float,
                     metavar='W', help='weight decay (default: 1e-4)')
 # Checkpoints
@@ -214,7 +216,22 @@ def save_checkpoint(state, epoch,is_best, checkpoint='checkpoint', filename='che
         torch.save(state, filepath)
         if is_best == 1:
             shutil.copyfile(filepath, os.path.join(checkpoint, 'model_best.pth.tar'))
+def convert_layers(model, num_to_convert=1e4, layer_type_old=nn.BatchNorm2d, layer_type_new=VarLearn, **kwargs):
+    conversion_count = 0
+    for name, module in reversed(model._modules.items()):
+        if len(list(module.children())) > 0:
+            # recurse
+            model._modules[name], num_converted = convert_layers(module, num_to_convert-conversion_count, layer_type_old, layer_type_new, **kwargs)
+            conversion_count += num_converted
 
+        if type(module) == layer_type_old and conversion_count < num_to_convert:
+            layer_old = module
+            layer_new = layer_type_new(layer_old.num_features, **kwargs)
+
+            model._modules[name] = layer_new
+            conversion_count += 1
+
+    return model, conversion_count
 def main():
     global best_acc
     start_epoch = args.start_epoch  # start from epoch 0 or last checkpoint epoch
@@ -260,6 +277,14 @@ def main():
     else:
         model = models.__dict__[args.arch](num_classes=num_classes)
 
+    
+    print('before change')
+    print(model)
+    if not args.standard_bn:
+        print("after change")
+        model,numBN = convert_layers(model,args.varlearn_initvalue)
+        print(model)
+        print('numbn:',numBN)
     model = torch.nn.DataParallel(model).cuda()
     cudnn.benchmark = True
     print('    Total params: %.2fM' % (sum(p.numel() for p in model.parameters()) / 1000000.0))
