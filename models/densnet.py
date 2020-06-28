@@ -5,8 +5,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from ..layers import *
-
 __all__ = ['DenseNet121',"DenseNet169","DenseNet201"]
 class Bottleneck(nn.Module):
     def __init__(self, in_planes, growth_rate):

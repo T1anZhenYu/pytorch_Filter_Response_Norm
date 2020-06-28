@@ -210,15 +210,20 @@ def save_checkpoint(state, epoch,is_best, checkpoint='checkpoint', filename='che
         torch.save(state, filepath)
         if is_best == 1:
             shutil.copyfile(filepath, os.path.join(checkpoint, 'model_best.pth.tar'))
-def convert_layers(model, num_to_convert=1e4, layer_type_old=nn.BatchNorm2d, layer_type_new=VarLearn, **kwargs):
+def convert_layers(model, layer_type_old=nn.BatchNorm2d, layer_type_new=VarLearn, **kwargs):
     conversion_count = 0
+    # print(type(torch.nn.modules.batchnorm.BatchNorm2d))
     for name, module in reversed(model._modules.items()):
+
         if len(list(module.children())) > 0:
             # recurse
-            model._modules[name], num_converted = convert_layers(module, num_to_convert-conversion_count, layer_type_old, layer_type_new, **kwargs)
+            model._modules[name], num_converted = convert_layers(module, \
+            layer_type_old, layer_type_new, **kwargs)
             conversion_count += num_converted
+        # print('name:',name,' module:',module," 1 type:",nn.BatchNorm2d," 2 type",type(module),\
+        # " change?:",type(module) == nn.BatchNorm2d)
+        if type(module) == nn.BatchNorm2d:
 
-        if type(module) == layer_type_old and conversion_count < num_to_convert:
             layer_old = module
             layer_new = layer_type_new(layer_old.num_features, **kwargs)
 
@@ -228,7 +233,7 @@ def convert_layers(model, num_to_convert=1e4, layer_type_old=nn.BatchNorm2d, lay
     return model, conversion_count
 def main():
     global best_acc
-    start_epoch = args.start_epoch  # start from epoch 0 or last checkpoint epoch
+    start_epoch = 0  # start from epoch 0 or last checkpoint epoch
 
     if not os.path.isdir(args.checkpoint):
         mkdir_p(args.checkpoint)
