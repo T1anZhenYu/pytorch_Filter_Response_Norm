@@ -268,9 +268,9 @@ def main():
     for name, params in model.module.named_parameters():
         # print("name:", name)
         model_param += [{'params': [params]}]
-    optimizer = optim.SGD(model_param, lr=args.lr_min, momentum=args.momentum, weight_decay=args.weight_decay)
+    optimizer = optim.SGD(model_param, lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 
-    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, args.lr / 256.)
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, args.epochs)
     # Resume
     title = 'cifar-10-' + args.arch
     if args.resume:
