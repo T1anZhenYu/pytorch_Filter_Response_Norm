@@ -277,7 +277,7 @@ def main():
     print(model)
     if not args.standard_bn:
         print("after change")
-        model, numBN = convert_layers(model, args.varlearn_initvalue)
+        model, numBN = convert_layers(model, initvalue=args.varlearn_initvalue)
         print(model)
         print('numbn:', numBN)
     if args.arch.startswith('alexnet') or args.arch.startswith('vgg'):

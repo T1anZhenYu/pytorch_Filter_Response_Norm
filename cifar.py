@@ -277,12 +277,9 @@ def main():
     else:
         model = models.__dict__[args.arch](num_classes=num_classes)
 
-    
-    print('before change')
-    print(model)
     if not args.standard_bn:
         print("after change")
-        model,numBN = convert_layers(model,args.varlearn_initvalue)
+        model,numBN = convert_layers(model,initvalue=args.varlearn_initvalue)
         print(model)
         print('numbn:',numBN)
     model = torch.nn.DataParallel(model).cuda()
