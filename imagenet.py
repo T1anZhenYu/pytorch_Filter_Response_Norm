@@ -220,12 +220,13 @@ def test(val_loader, model, criterion, epoch, use_cuda):
         bar.next()
     bar.finish()
     return (losses.avg, top1.avg)
-
-def save_checkpoint(state, is_best, checkpoint='checkpoint', filename='checkpoint.pth.tar'):
-    filepath = os.path.join(checkpoint, filename)
-    torch.save(state, filepath)
-    if is_best:
-        shutil.copyfile(filepath, os.path.join(checkpoint, 'model_best.pth.tar'))
+def save_checkpoint(state, epoch,is_best, checkpoint='checkpoint', filename='checkpoint.pth.tar'):
+    if(epoch%10==1):
+        print("***************************saving***************************")
+        filepath = os.path.join(checkpoint, filename)
+        torch.save(state, filepath)
+        if is_best == 1:
+            shutil.copyfile(filepath, os.path.join(checkpoint, 'model_best.pth.tar'))
 
 def main():
     global best_acc
@@ -297,8 +298,7 @@ def main():
 
     # Resume
     title = 'ImageNet-' + args.arch
-    if args.resume:
-        # Load checkpoint.
+    if args.resume:ß
         print('==> Resuming from checkpoint..')
         assert os.path.isfile(args.resume), 'Error: no checkpoint directory found!'
         args.checkpoint = os.path.dirname(args.resume)
@@ -307,6 +307,7 @@ def main():
         start_epoch = checkpoint['epoch']
         model.load_state_dict(checkpoint['state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer'])
+        scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, args.epochs,last_epoch=start_epoch-1)
         logger = Logger(os.path.join(args.checkpoint, 'log.txt'), title=title, resume=True)
     else:
         logger = Logger(os.path.join(args.checkpoint, 'log.txt'), title=title)

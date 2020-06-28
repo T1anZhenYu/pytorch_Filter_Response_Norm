@@ -206,6 +206,7 @@ def test(testloader, model, criterion, epoch, use_cuda):
 
 def save_checkpoint(state, epoch,is_best, checkpoint='checkpoint', filename='checkpoint.pth.tar'):
     if(epoch%10==1):
+        print("***************************saving***************************")
         filepath = os.path.join(checkpoint, filename)
         torch.save(state, filepath)
         if is_best == 1:
@@ -309,6 +310,7 @@ def main():
         model.load_state_dict(checkpoint['state_dict'])
         # adjust_learning_rate(optimizer, start_epoch)
         optimizer.load_state_dict(checkpoint['optimizer'])
+        scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, args.epochs,last_epoch=start_epoch-1)
         logger = Logger(os.path.join(args.checkpoint, 'log.txt'), title=title, resume=True)
     else:
         logger = Logger(os.path.join(args.checkpoint, 'log.txt'), title=title)
@@ -343,7 +345,7 @@ def main():
             'acc': test_acc,
             'best_acc': best_acc,
             'optimizer': optimizer.state_dict(),
-        }, epoch, is_best, checkpoint=args.checkpoint)
+        }, epoch+1, is_best, checkpoint=args.checkpoint)
 
         scheduler.step()
 
