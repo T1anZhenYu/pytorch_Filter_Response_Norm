@@ -102,7 +102,6 @@ if use_cuda:
 best_acc = 0  # best test accuracy
 
 
-
 def train(trainloader, model, criterion, optimizer, epoch, use_cuda):
     # switch to train mode
     model.train()
@@ -222,6 +221,7 @@ def main():
 
     if not os.path.isdir(args.checkpoint):
         mkdir_p(args.checkpoint)
+    print("args:",args)
 
     # Data
     print('==> Preparing dataset %s' % args.dataset)
@@ -268,7 +268,7 @@ def main():
     for name, params in model.module.named_parameters():
         # print("name:", name)
         model_param += [{'params': [params]}]
-    optimizer = optim.SGD(model_param, lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
+    optimizer = optim.SGD(model_param, lr=args.lr*args.train_batch/256, momentum=args.momentum, weight_decay=args.weight_decay)
 
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, args.epochs)
     # Resume
@@ -299,8 +299,8 @@ def main():
     setting.total_epoch = args.epochs
     for epoch in range(start_epoch, args.epochs):
         setting.temp_epoch = epoch
-
-        print('\nEpoch: [%d | %d] LR: %f' % (epoch + 1, args.epochs, state['lr']))
+        
+        print('\nEpoch: [%d | %d] LR: %f' % (epoch + 1, args.epochs, optimizer.param_groups[0]['lr']))
 
         train_loss, train_acc = train(trainloader, model, criterion, optimizer, epoch,
                                       use_cuda)
