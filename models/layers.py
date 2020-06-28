@@ -527,7 +527,7 @@ class VarLearn(nn.Module):
         self.eps = eps
         self.initvalue = initvalue
         self.momentum = momentum
-        print("var initvalue:",self.initvalue)
+        # print("var initvalue:",self.initvalue)
         # buffer
         self.register_buffer('running_mean', torch.zeros(num_features))
         self.register_buffer('running_var', torch.ones(num_features))
