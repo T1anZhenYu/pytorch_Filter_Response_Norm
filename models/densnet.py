@@ -64,6 +64,10 @@ class DenseNet(nn.Module):
 
         self.bn = nn.BatchNorm2d(num_planes)
         self.linear = nn.Linear(num_planes, num_classes)
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+                m.weight.data.normal_(0, math.sqrt(2. / n))
 
     def _make_dense_layers(self, block, in_planes, nblock):
         layers = []
