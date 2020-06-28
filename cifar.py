@@ -44,15 +44,10 @@ parser.add_argument('--test-batch', default=100, type=int, metavar='N',
                     help='test batchsize')
 parser.add_argument('--lr', default=0.1, type=float,
                     help='lr')
-parser.add_argument('--lr_max', default=0.1, type=float,
-                    help='maximum lr')
-parser.add_argument('--lr_min', default=0.000001, type=float,
-                    help='minimum lr')
 parser.add_argument('--drop', '--dropout', default=0, type=float,
                     metavar='Dropout', help='Dropout ratio')
 parser.add_argument('--schedule', type=int, nargs='+', default=[150, 225,300],
                         help='Decrease learning rate at these epochs.')
-parser.add_argument('--gamma', type=float, default=0.1, help='LR is multiplied by gamma on schedule.')
 parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
                     help='momentum')
 parser.add_argument('--weight-decay', '--wd', default=5e-4, type=float,
@@ -82,8 +77,7 @@ parser.add_argument('-e', '--evaluate', dest='evaluate', action='store_true',
 #Device options
 parser.add_argument('--gpu-id', default='0', type=str,
                     help='id(s) for CUDA_VISIBLE_DEVICES')
-parser.add_argument('--ramp-up', default=50, type=int,
-                    help='ramp-up epochs')
+
 parser.add_argument('--cos', default=False, type=bool,help='using cosine decay schedule?')
 args = parser.parse_args()
 state = {k: v for k, v in args._get_kwargs()}
@@ -107,130 +101,7 @@ if use_cuda:
 
 best_acc = 0  # best test accuracy
 
-def main():
-    global best_acc
-    start_epoch = args.start_epoch  # start from epoch 0 or last checkpoint epoch
 
-    if not os.path.isdir(args.checkpoint):
-        mkdir_p(args.checkpoint)
-
-
-
-    # Data
-    print('==> Preparing dataset %s' % args.dataset)
-    transform_train = transforms.Compose([
-        transforms.RandomCrop(32, padding=4),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-    ])
-
-    transform_test = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-    ])
-    if args.dataset == 'cifar10':
-        dataloader = datasets.CIFAR10
-        num_classes = 10
-    else:
-        dataloader = datasets.CIFAR100
-        num_classes = 100
-
-
-    trainset = dataloader(root='./data', train=True, download=True, transform=transform_train)
-    trainloader = data.DataLoader(trainset, batch_size=args.train_batch, shuffle=True, num_workers=args.workers)
-
-    testset = dataloader(root='./data', train=False, download=False, transform=transform_test)
-    testloader = data.DataLoader(testset, batch_size=args.test_batch, shuffle=False, num_workers=args.workers)
-
-    # Model
-    print("==> creating model '{}'".format(args.arch))
-    if args.arch.endswith('resnet'):
-        model = models.__dict__[args.arch](
-                    num_classes=num_classes,
-                    depth=args.depth,
-                    block_name=args.block_name,
-                )
-    else:
-        model = models.__dict__[args.arch](num_classes=num_classes)
-
-    model = torch.nn.DataParallel(model).cuda()
-    cudnn.benchmark = True
-    print('    Total params: %.2fM' % (sum(p.numel() for p in model.parameters())/1000000.0))
-    criterion = nn.CrossEntropyLoss()
-    model_param = []
-    for name, params in model.module.named_parameters():
-        # print("name:", name)
-        model_param += [{'params':[params]}]
-    optimizer = optim.SGD(model_param, lr=args.lr_min, momentum=args.momentum, weight_decay=args.weight_decay)
-
-    # Resume
-    title = 'cifar-10-' + args.arch
-    if args.resume:
-        # Load checkpoint.
-        print('==> Resuming from checkpoint..')
-        assert os.path.isfile(args.resume), 'Error: no checkpoint directory found!'
-        args.checkpoint = os.path.dirname(args.resume)
-        checkpoint = torch.load(args.resume)
-        best_acc = checkpoint['best_acc']
-        start_epoch = checkpoint['epoch']
-        model.load_state_dict(checkpoint['state_dict'])
-        # adjust_learning_rate(optimizer, start_epoch)
-        optimizer.load_state_dict(checkpoint['optimizer'])
-        logger = Logger(os.path.join(args.checkpoint, 'log.txt'), title=title, resume=True)
-    else:
-        logger = Logger(os.path.join(args.checkpoint, 'log.txt'), title=title)
-        logger.set_names(['Learning Rate', 'Train Loss', 'Valid Loss', 'Train Acc.', 'Valid Acc.'])
-
-
-    if args.evaluate:
-        print('\nEvaluation only')
-        test_loss, test_acc = test(testloader, model, criterion, start_epoch, use_cuda)
-        print(' Test Loss:  %.8f, Test Acc:  %.2f' % (test_loss, test_acc))
-        return
-
-    # Train and val
-    setting.total_epoch = args.epochs
-    for epoch in range(start_epoch, args.epochs):
-        setting.temp_epoch = epoch
-        adjust_learning_rate(optimizer, epoch)
-
-
-        print('\nEpoch: [%d | %d] LR: %f' % (epoch + 1, args.epochs, state['lr']))
-
-        train_loss, train_acc = train(trainloader, model, criterion, optimizer, epoch,
-                                      use_cuda)
-        test_loss, test_acc = test(testloader, model, criterion, epoch, use_cuda)
-
-        # append logger file
-        logger.append([state['lr'], train_loss, test_loss, train_acc, test_acc])
-
-        # save model
-        is_best = test_acc > best_acc
-        best_acc = max(test_acc, best_acc)
-        save_checkpoint({
-                'epoch': epoch + 1,
-                'state_dict': model.state_dict(),
-                'acc': test_acc,
-                'best_acc': best_acc,
-                'optimizer' : optimizer.state_dict(),
-            }, is_best, checkpoint=args.checkpoint)
-        if epoch == args.ramp_up:
-            save_checkpoint({
-                'epoch': epoch + 1,
-                'state_dict': model.state_dict(),
-                'acc': test_acc,
-                'best_acc': best_acc,
-                'optimizer': optimizer.state_dict(),
-            }, is_best, checkpoint=args.checkpoint)
-
-
-    logger.close()
-    logger.plot()
-    savefig(os.path.join(args.checkpoint, 'log.eps'))
-
-    print('Best acc:')
-    print(best_acc)
 
 def train(trainloader, model, criterion, optimizer, epoch, use_cuda):
     # switch to train mode
@@ -249,7 +120,7 @@ def train(trainloader, model, criterion, optimizer, epoch, use_cuda):
         data_time.update(time.time() - end)
 
         if use_cuda:
-            inputs, targets = inputs.cuda(), targets.cuda(async=True)
+            inputs, targets = inputs.cuda(), targets.cuda()
         inputs, targets = torch.autograd.Variable(inputs), torch.autograd.Variable(targets)
 
         # compute output
@@ -338,53 +209,124 @@ def test(testloader, model, criterion, epoch, use_cuda):
     bar.finish()
     return (losses.avg, top1.avg)
 
-def save_checkpoint(state, is_best, checkpoint='checkpoint', filename='checkpoint.pth.tar'):
-    filepath = os.path.join(checkpoint, filename)
-    torch.save(state, filepath)
-    if is_best == 1:
-        shutil.copyfile(filepath, os.path.join(checkpoint, 'model_best.pth.tar'))
-    if is_best == 2:
-        shutil.copyfile(filepath, os.path.join(checkpoint, 'ramp_up.pth.tar'))
+def save_checkpoint(state, epoch,is_best, checkpoint='checkpoint', filename='checkpoint.pth.tar'):
+    if(epoch%10==1):
+        filepath = os.path.join(checkpoint, filename)
+        torch.save(state, filepath)
+        if is_best == 1:
+            shutil.copyfile(filepath, os.path.join(checkpoint, 'model_best.pth.tar'))
 
+def main():
+    global best_acc
+    start_epoch = args.start_epoch  # start from epoch 0 or last checkpoint epoch
 
-# def adjust_learning_rate(optimizer, epoch):
-#     global state
-#     if epoch in args.schedule:
-#         state['lr'] *= args.gamma
-#         for param_group in optimizer.param_groups:
-#             param_group['lr'] = state['lr']
-def adjust_learning_rate(optimizer, epoch):
-    global state
-    lr_min = args.lr_min
-    lr_max = 0.1 * args.train_batch / 256
-    if args.cos:
-        if epoch <= args.ramp_up:
-            lr = lr_min + 0.5*(lr_max - lr_min)*(1 - math.cos(epoch/(args.ramp_up+1)*math.pi))
-        else :
-            lr = lr_min + 0.5*(lr_max - lr_min)*\
-                 (1 + math.cos((epoch - args.ramp_up)/(args.epochs - args.ramp_up)*math.pi))
-        # if lr <0.0001:
-        #     lr = 0.0001
-        state['lr'] = lr
+    if not os.path.isdir(args.checkpoint):
+        mkdir_p(args.checkpoint)
 
-        for param_group in optimizer.param_groups:
-            # print(param_group)
-            param_group['lr'] = state['lr']
+    # Data
+    print('==> Preparing dataset %s' % args.dataset)
+    transform_train = transforms.Compose([
+        transforms.RandomCrop(32, padding=4),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+    ])
+
+    transform_test = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+    ])
+    if args.dataset == 'cifar10':
+        dataloader = datasets.CIFAR10
+        num_classes = 10
     else:
+        dataloader = datasets.CIFAR100
+        num_classes = 100
 
-        if epoch <= args.ramp_up:
-            lr = lr_min + 0.5*(args.lr_max - lr_min)*(1 - math.cos(epoch/(args.ramp_up+1)*math.pi))
-            state['lr'] = lr
-            print("lr:",state['lr'])
-        elif epoch in args.schedule:
-            state['lr'] *= args.gamma
-            for param_group in optimizer.param_groups:
-                param_group['lr'] = state['lr']
+    trainset = dataloader(root='./data', train=True, download=True, transform=transform_train)
+    trainloader = data.DataLoader(trainset, batch_size=args.train_batch, shuffle=True, num_workers=args.workers)
 
+    testset = dataloader(root='./data', train=False, download=False, transform=transform_test)
+    testloader = data.DataLoader(testset, batch_size=args.test_batch, shuffle=False, num_workers=args.workers)
 
-        elif epoch > args.schedule[0] and state['lr'] == 0.1:
-            for param_group in optimizer.param_groups:
-                param_group['lr'] = state['lr']
+    # Model
+    print("==> creating model '{}'".format(args.arch))
+    if args.arch.endswith('resnet'):
+        model = models.__dict__[args.arch](
+            num_classes=num_classes,
+            depth=args.depth,
+            block_name=args.block_name,
+        )
+    else:
+        model = models.__dict__[args.arch](num_classes=num_classes)
 
+    model = torch.nn.DataParallel(model).cuda()
+    cudnn.benchmark = True
+    print('    Total params: %.2fM' % (sum(p.numel() for p in model.parameters()) / 1000000.0))
+    criterion = nn.CrossEntropyLoss()
+    model_param = []
+    for name, params in model.module.named_parameters():
+        # print("name:", name)
+        model_param += [{'params': [params]}]
+    optimizer = optim.SGD(model_param, lr=args.lr_min, momentum=args.momentum, weight_decay=args.weight_decay)
+
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, args.lr / 256.)
+    # Resume
+    title = 'cifar-10-' + args.arch
+    if args.resume:
+        # Load checkpoint.
+        print('==> Resuming from checkpoint..')
+        assert os.path.isfile(args.resume), 'Error: no checkpoint directory found!'
+        args.checkpoint = os.path.dirname(args.resume)
+        checkpoint = torch.load(args.resume)
+        best_acc = checkpoint['best_acc']
+        start_epoch = checkpoint['epoch']
+        model.load_state_dict(checkpoint['state_dict'])
+        # adjust_learning_rate(optimizer, start_epoch)
+        optimizer.load_state_dict(checkpoint['optimizer'])
+        logger = Logger(os.path.join(args.checkpoint, 'log.txt'), title=title, resume=True)
+    else:
+        logger = Logger(os.path.join(args.checkpoint, 'log.txt'), title=title)
+        logger.set_names(['Learning Rate', 'Train Loss', 'Valid Loss', 'Train Acc.', 'Valid Acc.'])
+
+    if args.evaluate:
+        print('\nEvaluation only')
+        test_loss, test_acc = test(testloader, model, criterion, start_epoch, use_cuda)
+        print(' Test Loss:  %.8f, Test Acc:  %.2f' % (test_loss, test_acc))
+        return
+
+    # Train and val
+    setting.total_epoch = args.epochs
+    for epoch in range(start_epoch, args.epochs):
+        setting.temp_epoch = epoch
+
+        print('\nEpoch: [%d | %d] LR: %f' % (epoch + 1, args.epochs, state['lr']))
+
+        train_loss, train_acc = train(trainloader, model, criterion, optimizer, epoch,
+                                      use_cuda)
+        test_loss, test_acc = test(testloader, model, criterion, epoch, use_cuda)
+
+        # append logger file
+        logger.append([state['lr'], train_loss, test_loss, train_acc, test_acc])
+
+        # save model
+        is_best = test_acc > best_acc
+        best_acc = max(test_acc, best_acc)
+        save_checkpoint({
+            'epoch': epoch + 1,
+            'state_dict': model.state_dict(),
+            'acc': test_acc,
+            'best_acc': best_acc,
+            'optimizer': optimizer.state_dict(),
+        }, epoch, is_best, checkpoint=args.checkpoint)
+
+        scheduler.step()
+
+    logger.close()
+    logger.plot()
+    savefig(os.path.join(args.checkpoint, 'log.eps'))
+
+    print('Best acc:')
+    print(best_acc)
 if __name__ == '__main__':
     main()
