@@ -18,12 +18,11 @@ import torch.optim as optim
 import torch.utils.data as data
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
-import models.cifar as models
+import models as models
 from progress.bar import Bar
-import math
 from utils import Logger, AverageMeter, accuracy, mkdir_p, savefig
-import setting
 from models.layers import *
+
 model_names = sorted(name for name in models.__dict__
     if not name.startswith("__")
     and callable(models.__dict__[name]))
@@ -36,8 +35,6 @@ parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
 # Optimization options
 parser.add_argument('--epochs', default=300, type=int, metavar='N',
                     help='number of total epochs to run')
-parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
-                    help='manual epoch number (useful on restarts)')
 parser.add_argument('--train-batch', default=32, type=int, metavar='N',
                     help='train batchsize')
 parser.add_argument('--test-batch', default=100, type=int, metavar='N',
@@ -46,8 +43,6 @@ parser.add_argument('--lr', default=0.1, type=float,
                     help='lr')
 parser.add_argument('--drop', '--dropout', default=0, type=float,
                     metavar='Dropout', help='Dropout ratio')
-parser.add_argument('--schedule', type=int, nargs='+', default=[150, 225,300],
-                        help='Decrease learning rate at these epochs.')
 parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
                     help='momentum')
 parser.add_argument('--standard_bn', action='store_true', help='use standard bn')
@@ -80,7 +75,6 @@ parser.add_argument('-e', '--evaluate', dest='evaluate', action='store_true',
 parser.add_argument('--gpu-id', default='0', type=str,
                     help='id(s) for CUDA_VISIBLE_DEVICES')
 
-parser.add_argument('--cos', default=False, type=bool,help='using cosine decay schedule?')
 args = parser.parse_args()
 state = {k: v for k, v in args._get_kwargs()}
 
@@ -293,7 +287,8 @@ def main():
     for name, params in model.module.named_parameters():
         # print("name:", name)
         model_param += [{'params': [params]}]
-    optimizer = optim.SGD(model_param, lr=args.lr*args.train_batch/256, momentum=args.momentum, weight_decay=args.weight_decay)
+    optimizer = optim.SGD(model_param, lr=args.lr*args.train_batch/256, momentum=args.momentum, \
+                          weight_decay=args.weight_decay)
 
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, args.epochs)
     # Resume
