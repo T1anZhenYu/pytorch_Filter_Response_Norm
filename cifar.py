@@ -331,7 +331,7 @@ def main():
         test_loss, test_acc = test(testloader, model, criterion, epoch, use_cuda)
 
         # append logger file
-        logger.append([state['lr'], train_loss, test_loss, train_acc, test_acc])
+        logger.append([optimizer.param_groups[0]['lr'], train_loss, test_loss, train_acc, test_acc])
 
         # save model
         is_best = test_acc > best_acc
