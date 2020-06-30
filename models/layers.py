@@ -509,7 +509,7 @@ class OfficialDetachVar(nn.Module):
 
 
 class VarLearn(nn.Module):
-    def __init__(self, num_features, eps=1e-05, momentum=0.9, affine=False, initvalue=25):
+    def __init__(self, num_features, eps=1e-05, momentum=0.1, affine=False, initvalue=25):
         """
         Input Variables:
         ----------------
@@ -553,13 +553,13 @@ class VarLearn(nn.Module):
             #     / (torch.sqrt(torch.sqrt(self.trainable_var[None, :, None, None])) + self.eps)
             x.\
             sub_(mean[None, :, None, None]).\
-            div_(torch.pow(var[None, :, None, None], exponent=1/4.) + self.eps)
+            div_(torch.pow(var[None, :, None, None], exponent=1/16.) + self.eps)
 
         else:
             mean = self.running_mean
             var = self.running_var
             x.\
             sub_(mean[None, :, None, None]).\
-            div_(torch.pow(var[None, :, None, None], exponent=1/4.) + self.eps)
+            div_(torch.pow(var[None, :, None, None], exponent=1/16.) + self.eps)
 
         return x
