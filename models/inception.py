@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-imort math
+import math
 __all__ = ['inceptionv3']
 class BasicConv2d(nn.Module):
 
