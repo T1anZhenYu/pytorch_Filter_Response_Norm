@@ -544,22 +544,22 @@ class VarLearn(nn.Module):
 
             # update the running mean and var
             self.running_mean.mul_(1 - self.momentum).add_(self.momentum * mean)
-            self.running_var.mul_(1 - self.momentum).add_(self.momentum * self.trainable_var)
+            self.running_var.mul_(self.momentum).add_((1-self.momentum) * self.trainable_var)
 
-
+            self.trainable_var.data = torch.max(self.trainable_var.data,torch.Tensor([0.1]).to(x.device))
             var = self.trainable_var
 
             # y = (x - mean[None, :, None, None]) \
             #     / (torch.sqrt(torch.sqrt(self.trainable_var[None, :, None, None])) + self.eps)
             x.\
             sub_(mean[None, :, None, None]).\
-            div_(torch.pow(var[None, :, None, None], exponent=1/16.) + self.eps)
+            div_(torch.pow(var[None, :, None, None], exponent=1/8.) + self.eps)
 
         else:
             mean = self.running_mean
             var = self.running_var
             x.\
             sub_(mean[None, :, None, None]).\
-            div_(torch.pow(var[None, :, None, None], exponent=1/16.) + self.eps)
+            div_(torch.pow(var[None, :, None, None], exponent=1/8.) + self.eps)
 
         return x
