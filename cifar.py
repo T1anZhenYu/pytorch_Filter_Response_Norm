@@ -205,12 +205,12 @@ def test(testloader, model, criterion, epoch, use_cuda):
     return (losses.avg, top1.avg)
 
 def save_checkpoint(state, epoch,is_best, checkpoint='checkpoint', filename='checkpoint.pth.tar'):
-    if(epoch%10==1):
-        print("***************************saving***************************")
-        filepath = os.path.join(checkpoint, filename)
-        torch.save(state, filepath)
-        if is_best == 1:
-            shutil.copyfile(filepath, os.path.join(checkpoint, 'model_best.pth.tar'))
+    
+    print("***************************saving***************************")
+    filepath = os.path.join(checkpoint, filename)
+    torch.save(state, filepath)
+    if is_best == 1:
+        shutil.copyfile(filepath, os.path.join(checkpoint, 'model_best.pth.tar'))
 def convert_layers(model, layer_type_old=nn.BatchNorm2d, layer_type_new=VarLearn, **kwargs):
     conversion_count = 0
     # print(type(torch.nn.modules.batchnorm.BatchNorm2d))
