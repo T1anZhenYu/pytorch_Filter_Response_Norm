@@ -568,7 +568,7 @@ class VarLearn(nn.Module):
         return x
 
 class MixVar(nn.Module):
-    def __init__(self, num_features, eps=1e-05, momentum=0.1, affine=False):
+    def __init__(self, num_features, eps=1e-05, momentum=0.1, affine=False, initvalue=25):
         """
         Input Variables:
         ----------------
@@ -591,6 +591,7 @@ class MixVar(nn.Module):
         self.register_buffer('running_mean', torch.zeros(num_features))
         self.register_buffer('running_var', torch.ones(num_features))
         self.mixlayer = nn.Linear(num_features,num_features)
+        nn.init.constant_(self.mixlayer.weight,1/num_features)
         # parameter
 
 
@@ -599,7 +600,7 @@ class MixVar(nn.Module):
         if self.training:
             mean = x.mean(dim=(0, 2, 3))
             var = (x - mean[None, :, None, None]).pow(2).mean(dim=(0, 2, 3))
-            newvar = self.mixlayer(num_features,num_features)
+            newvar = self.mixlayer(var)
             # update the running mean and var
             self.running_mean.mul_(1 - self.momentum).add_(self.momentum * mean)
             self.running_var.mul_(1 - self.momentum).add_(self.momentum * newvar)
