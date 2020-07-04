@@ -85,7 +85,7 @@ class ResNet(nn.Module):
             if isinstance(m, nn.Conv2d):
                 # n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
                 # m.weight.data.normal_(0, math.sqrt(2. / n))
-                torch.nn.init.kaiming_normal_(m.weight, mode='fan_in', nonlinearity='relu')
+                torch.nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
     def _make_layer(self, block, planes, num_blocks, stride):
         strides = [stride] + [1]*(num_blocks-1)
         layers = []
