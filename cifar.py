@@ -9,7 +9,7 @@ import os
 import shutil
 import time
 import random
-
+from torch.utils.tensorboard import SummaryWriter
 import torch
 import torch.nn as nn
 import torch.nn.parallel
@@ -235,11 +235,11 @@ def convert_layers(model, layer_type_old=nn.BatchNorm2d, layer_type_new=VarLearn
 def main():
     global best_acc
     start_epoch = 0  # start from epoch 0 or last checkpoint epoch
-
+    
     if not os.path.isdir(args.checkpoint):
         mkdir_p(args.checkpoint)
-    print("args:",args)
-
+    # print("args:",args)
+    writer = SummaryWriter(log_dir=args.checkpoint)
     # Data
     print('==> Preparing dataset %s' % args.dataset)
     transform_train = transforms.Compose([
@@ -320,6 +320,8 @@ def main():
         return
 
     # Train and val
+    total_param = list( model.named_parameters())
+
     setting.total_epoch = args.epochs
     for epoch in range(start_epoch, args.epochs):
         setting.temp_epoch = epoch
@@ -329,7 +331,18 @@ def main():
         train_loss, train_acc = train(trainloader, model, criterion, optimizer, epoch,
                                       use_cuda)
         test_loss, test_acc = test(testloader, model, criterion, epoch, use_cuda)
-
+        for i in range(len(total_param)):
+            if "trainable_var" in total_param[i][0]:
+                name = total_param[i][0]
+                s = name.split(".")
+                s[-1] = ""
+                tagname = ".".join(s)
+                # print("tagname:",tagname)
+                s[-1] ='real_var'
+                newname = '.'.join(s)
+                # print(newname," ", total_param[i][1].size())
+                writer.add_scalars(tagname,{name:total_param[i][1][0],newname:total_param[i+1][1][0]},epoch)
+                # writer.add_scalar(name,params[0],epoch)
         # append logger file
         logger.append([optimizer.param_groups[0]['lr'], train_loss, test_loss, train_acc, test_acc])
 

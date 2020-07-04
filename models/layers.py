@@ -535,7 +535,8 @@ class VarLearn(nn.Module):
         # parameter
         self.register_parameter('trainable_var',
             nn.Parameter(self.initvalue*torch.ones(num_features)))
-
+        self.register_parameter('real_var',
+            nn.Parameter(torch.ones(num_features)))
 
     def forward(self, x):
         n = x.numel() / (x.size(1))
@@ -548,6 +549,8 @@ class VarLearn(nn.Module):
 
             self.trainable_var.data = torch.max(self.trainable_var.data,torch.Tensor([0.1]).to(x.device))
             var = self.trainable_var
+            self.real_var.data = 0.1*((x - mean[None, :, None, None]).pow(2).mean(dim=(0, 2, 3)))+\
+            self.real_var.data*0.9
 
             # y = (x - mean[None, :, None, None]) \
             #     / (torch.sqrt(torch.sqrt(self.trainable_var[None, :, None, None])) + self.eps)
