@@ -560,9 +560,62 @@ class VarLearn(nn.Module):
 
         else:
             mean = self.running_mean
-            var = self.trainable_var
+            var = self.running_var
             x.\
             sub_(mean[None, :, None, None]).\
             div_(torch.pow(var[None, :, None, None], exponent=1/4.) + self.eps)
+
+        return x
+
+class MixVar(nn.Module):
+    def __init__(self, num_features, eps=1e-05, momentum=0.1, affine=False, initvalue=25):
+        """
+        Input Variables:
+        ----------------
+            num_features: in channels
+            eps: eps to avoid dviding zero
+            momentum: momentum for updating of running var and mean
+            affine: has to be False
+            initvaule: initial value of trainable var
+        """
+
+        super(MixVar, self).__init__()
+
+        assert affine==False, 'NOT Support Affine Yet'
+        # constant
+        self.eps = eps
+        self.initvalue = initvalue
+        self.momentum = momentum
+        # print("var initvalue:",self.initvalue)
+        # buffer
+        self.register_buffer('running_mean', torch.zeros(num_features))
+        self.register_buffer('running_var', torch.ones(num_features))
+        self.mixlayer = nn.Linear(num_features,num_features)
+        # parameter
+
+
+    def forward(self, x):
+        n = x.numel() / (x.size(1))
+        if self.training:
+            mean = x.mean(dim=(0, 2, 3))
+            var = (x - mean[None, :, None, None]).pow(2).mean(dim=(0, 2, 3))
+            newvar = self.mixlayer(num_features,num_features)
+            # update the running mean and var
+            self.running_mean.mul_(1 - self.momentum).add_(self.momentum * mean)
+            self.running_var.mul_(1 - self.momentum).add_(self.momentum * newvar)
+
+
+            # y = (x - mean[None, :, None, None]) \
+            #     / (torch.sqrt(torch.sqrt(self.trainable_var[None, :, None, None])) + self.eps)
+            x.\
+            sub_(mean[None, :, None, None]).\
+            div_(torch.pow(newvar[None, :, None, None], exponent=1/2.) + self.eps)
+
+        else:
+            mean = self.running_mean
+            var = self.running_var
+            x.\
+            sub_(mean[None, :, None, None]).\
+            div_(torch.pow(var[None, :, None, None], exponent=1/2.) + self.eps)
 
         return x
