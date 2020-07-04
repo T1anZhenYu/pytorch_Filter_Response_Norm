@@ -568,7 +568,7 @@ class VarLearn(nn.Module):
         return x
 
 class MixVar(nn.Module):
-    def __init__(self, num_features, eps=1e-05, momentum=0.1, affine=False, initvalue=25):
+    def __init__(self, num_features, eps=1e-05, momentum=0.1, affine=False):
         """
         Input Variables:
         ----------------
@@ -584,7 +584,7 @@ class MixVar(nn.Module):
         assert affine==False, 'NOT Support Affine Yet'
         # constant
         self.eps = eps
-        self.initvalue = initvalue
+
         self.momentum = momentum
         # print("var initvalue:",self.initvalue)
         # buffer
