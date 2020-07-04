@@ -333,7 +333,7 @@ def main():
         test_loss, test_acc = test(testloader, model, criterion, epoch, use_cuda)
         for i in range(len(total_param)):
             if "trainable_var" in total_param[i][0]:
-                for c in 4:
+                for c in range(4):
                     name = total_param[i][0]
                     s = name.split(".")
                     s[-1] = ""
