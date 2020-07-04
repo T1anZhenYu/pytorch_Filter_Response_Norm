@@ -333,15 +333,17 @@ def main():
         test_loss, test_acc = test(testloader, model, criterion, epoch, use_cuda)
         for i in range(len(total_param)):
             if "trainable_var" in total_param[i][0]:
-                name = total_param[i][0]
-                s = name.split(".")
-                s[-1] = ""
-                tagname = ".".join(s)
-                # print("tagname:",tagname)
-                s[-1] ='real_var'
-                newname = '.'.join(s)
-                # print(newname," ", total_param[i][1].size())
-                writer.add_scalars(tagname,{name:total_param[i][1][0],newname:total_param[i+1][1][0]},epoch)
+                for c in 4:
+                    name = total_param[i][0]
+                    s = name.split(".")
+                    s[-1] = ""
+                    tagname = ".".join(s)+" channel_"+str(c)
+                    # print("tagname:",tagname)
+                    s[-1] ='real_var'
+                    newname = '.'.join(s)
+                    # print(newname," ", total_param[i][1].size())
+                    writer.add_scalars(tagname,{name+".channel_"+str(c):total_param[i][1][c],\
+                    newname+".channel_"+str(c):total_param[i+1][1][c]},epoch)
                 # writer.add_scalar(name,params[0],epoch)
         writer.add_scalars('acc',{"test acc":test_acc,"train acc":train_acc},epoch)
         writer.add_scalars('loss',{"test loss":test_loss,"train loss":train_loss},epoch)
