@@ -343,10 +343,9 @@ def main():
                 # print(newname," ", total_param[i][1].size())
                 writer.add_scalars(tagname,{name:total_param[i][1][0],newname:total_param[i+1][1][0]},epoch)
                 # writer.add_scalar(name,params[0],epoch)
-        writer.add_scalar('test acc',test_acc,epoch)
-        writer.add_scalar('test loss',test_loss,epoch)
-        writer.add_scalar('train acc',train_acc,epoch)
-        writer.add_scalar('train loss',test_loss,epoch)
+        writer.add_scalars('acc',{"test acc":test_acc,"train acc":train_acc},epoch)
+        writer.add_scalars('loss',{"test loss":test_loss,"train loss":train_loss},epoch)
+
         # append logger file
         logger.append([optimizer.param_groups[0]['lr'], train_loss, test_loss, train_acc, test_acc])
 
