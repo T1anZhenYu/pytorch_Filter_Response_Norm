@@ -531,7 +531,7 @@ class VarLearn(nn.Module):
         # buffer
         self.register_buffer('running_mean', torch.zeros(num_features))
         self.register_buffer('running_var', torch.ones(num_features))
-
+        self.register_buffer("runnig_index",torch.ones(num_features))
         # parameter
         self.register_parameter('trainable_var',
             nn.Parameter(self.initvalue*torch.ones(num_features)))
@@ -545,7 +545,7 @@ class VarLearn(nn.Module):
 
             # update the running mean and var
             self.running_mean.mul_(1 - self.momentum).add_(self.momentum * mean)
-            self.running_var.mul_(self.momentum).add_((1-self.momentum) * self.trainable_var)
+            self.running_var.mul_(1-self.momentum).add_((self.momentum) * self.trainable_var)
 
             self.trainable_var.data = torch.max(self.trainable_var.data,torch.Tensor([0.1]).to(x.device))
             var = self.trainable_var
@@ -590,8 +590,10 @@ class MixVar(nn.Module):
         # buffer
         self.register_buffer('running_mean', torch.zeros(num_features))
         self.register_buffer('running_var', torch.ones(num_features))
-        self.mixlayer = nn.Linear(num_features,num_features)
-        nn.init.constant_(self.mixlayer.weight,1/num_features)
+        self.register_buffer('running_index', torch.ones(num_features))
+        self.mixlayer = nn.Conv1d(1, 1, kernel_size=3, padding=(3 - 1) // 2, bias=False) 
+        self.sigmoid = nn.Sigmoid()
+        # nn.init.constant_(self.mixlayer.weight,1/num_features)
         # parameter
 
 
@@ -600,23 +602,24 @@ class MixVar(nn.Module):
         if self.training:
             mean = x.mean(dim=(0, 2, 3))
             var = (x - mean[None, :, None, None]).pow(2).mean(dim=(0, 2, 3))
-            newvar = self.mixlayer(var)
+            index = self.sigmoid(self.mixlayer(var[None,None,:])).squeeze()
             # update the running mean and var
             self.running_mean.mul_(1 - self.momentum).add_(self.momentum * mean)
-            self.running_var.mul_(1 - self.momentum).add_(self.momentum * newvar)
-
+            self.running_var.mul_(1 - self.momentum).add_(self.momentum * var)
+            self.running_index.mul(1 - self.momentum).add_(self.momentum * index)
 
             # y = (x - mean[None, :, None, None]) \
             #     / (torch.sqrt(torch.sqrt(self.trainable_var[None, :, None, None])) + self.eps)
             x.\
             sub_(mean[None, :, None, None]).\
-            div_(torch.pow(newvar[None, :, None, None], exponent=1/2.) + self.eps)
-
+            div_(torch.pow(var[None, :, None, None], exponent=1/2.) + self.eps)
+            x.mul_(index[None, :, None, None])
         else:
             mean = self.running_mean
             var = self.running_var
+            index = self.running_index
             x.\
             sub_(mean[None, :, None, None]).\
             div_(torch.pow(var[None, :, None, None], exponent=1/2.) + self.eps)
-
+            x.mul_(index[None, :, None, None])
         return x
