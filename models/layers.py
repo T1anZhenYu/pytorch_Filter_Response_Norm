@@ -617,7 +617,7 @@ class MixVar(nn.Module):
         else:
             mean = self.running_mean
             var = self.running_var
-            index = self.running_index
+            index = self.sigmoid(self.mixlayer(var[None,None,:])).squeeze()
             x.\
             sub_(mean[None, :, None, None]).\
             div_(torch.pow(var[None, :, None, None], exponent=1/2.) + self.eps)
