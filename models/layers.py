@@ -590,8 +590,9 @@ class MixVar(nn.Module):
         # buffer
         self.register_buffer('running_mean', torch.zeros(num_features))
         self.register_buffer('running_var', torch.ones(num_features))
-        self.register_buffer('running_index', torch.ones(num_features))
-        self.mixlayer = nn.Conv1d(1, 1, kernel_size=3, padding=(3 - 1) // 2, bias=False) 
+
+        self.mixvar = nn.Conv1d(1, 1, kernel_size=3, padding=(3 - 1) // 2, bias=False) 
+        self.mixmean = nn.Conv1d(1, 1, kernel_size=3, padding=(3 - 1) // 2, bias=False) 
         self.sigmoid = nn.Sigmoid()
         # nn.init.constant_(self.mixlayer.weight,1/num_features)
         # parameter
@@ -602,24 +603,26 @@ class MixVar(nn.Module):
         if self.training:
             mean = x.mean(dim=(0, 2, 3))
             var = (x - mean[None, :, None, None]).pow(2).mean(dim=(0, 2, 3))
-            index = self.sigmoid(self.mixlayer(var[None,None,:])).squeeze()
+            indexvar = self.sigmoid(self.mixvar(var[None,None,:])).squeeze()
+            indexmean = self.sigmoid(self.mixmean(mean[None,None,:])).squeeze()
             # update the running mean and var
             self.running_mean.mul_(1 - self.momentum).add_(self.momentum * mean)
             self.running_var.mul_(1 - self.momentum).add_(self.momentum * var)
-            self.running_index.mul(1 - self.momentum).add_(self.momentum * index)
+
 
             # y = (x - mean[None, :, None, None]) \
             #     / (torch.sqrt(torch.sqrt(self.trainable_var[None, :, None, None])) + self.eps)
             x.\
             sub_(mean[None, :, None, None]).\
             div_(torch.pow(var[None, :, None, None], exponent=1/2.) + self.eps)
-            x.mul_(index[None, :, None, None])
+            x.mul_(0.5*indexvar[None, :, None, None]+0.5*indexmean[None, :, None, None])
         else:
             mean = self.running_mean
             var = self.running_var
-            index = self.sigmoid(self.mixlayer(var[None,None,:])).squeeze()
+            indexvar = self.sigmoid(self.mixvar(var[None,None,:])).squeeze()
+            indexmean = self.sigmoid(self.mixmean(mean[None,None,:])).squeeze()
             x.\
             sub_(mean[None, :, None, None]).\
             div_(torch.pow(var[None, :, None, None], exponent=1/2.) + self.eps)
-            x.mul_(index[None, :, None, None])
+            x.mul_(0.5*indexvar[None, :, None, None]+0.5*indexmean[None, :, None, None])
         return x
