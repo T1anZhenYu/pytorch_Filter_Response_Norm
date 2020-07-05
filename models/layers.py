@@ -590,9 +590,10 @@ class MixVar(nn.Module):
         # buffer
         self.register_buffer('running_mean', torch.zeros(num_features))
         self.register_buffer('running_var', torch.ones(num_features))
-
-        self.mixvar = nn.Conv1d(1, 1, kernel_size=3, padding=(3 - 1) // 2, bias=False) 
-        self.mixmean = nn.Conv1d(1, 1, kernel_size=3, padding=(3 - 1) // 2, bias=False) 
+        ks = int(num_features/2) if int(num_features/2)%2==1 else int(num_features/2)+1
+        
+        self.mixvar = nn.Conv1d(1, 1, kernel_size=ks , padding=(ks-1) // 2, bias=False) 
+        self.mixmean = nn.Conv1d(1, 1, kernel_size=ks, padding=(ks-1) // 2, bias=False) 
         self.sigmoid = nn.Sigmoid()
         # nn.init.constant_(self.mixlayer.weight,1/num_features)
         # parameter
