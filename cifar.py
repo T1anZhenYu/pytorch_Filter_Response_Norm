@@ -211,7 +211,7 @@ def save_checkpoint(state, epoch,is_best, checkpoint='checkpoint', filename='che
     torch.save(state, filepath)
     if is_best == 1:
         shutil.copyfile(filepath, os.path.join(checkpoint, 'model_best.pth.tar'))
-def convert_layers(model, layer_type_old=nn.BatchNorm2d, layer_type_new=MixVar, **kwargs):
+def convert_layers(model, layer_type_old=nn.BatchNorm2d, layer_type_new=MixChannel, **kwargs):
     conversion_count = 0
     # print(type(torch.nn.modules.batchnorm.BatchNorm2d))
     for name, module in reversed(model._modules.items()):
