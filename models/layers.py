@@ -106,9 +106,9 @@ class MixChannel(nn.Module):
         ks = 5
         
         self.mixvar = nn.Conv2d(1, 1, kernel_size=ks , padding=(ks-1) // 2, bias=False) 
-        self.linearVar = nn.Linear(num_features,1)
+        self.linearvar = nn.Conv1d(1, 1, kernel_size=ks, padding=(ks-1) // 2, bias=False) 
         self.mixmean = nn.Conv2d(1, 1, kernel_size=ks , padding=(ks-1) // 2, bias=False) 
-        self.linearmean = nn.Linear(num_features,1)
+        self.linearmean = nn.Conv1d(1, 1, kernel_size=ks, padding=(ks-1) // 2, bias=False) 
         # self.mixmean = nn.Conv1d(1, 1, kernel_size=ks, padding=(ks-1) // 2, bias=False) 
         self.sigmoid = nn.Sigmoid()
         # nn.init.constant_(self.mixlayer.weight,1/num_features)
@@ -125,17 +125,19 @@ class MixChannel(nn.Module):
             self.running_mean.mul_(1 - self.momentum).add_(self.momentum * mean)
             self.running_var.mul_(1 - self.momentum).add_(self.momentum * var)
 
-            varmix = torch.mm(self.running_var[:,None].detach(),var[None,:])
+            varmix = (torch.mm(self.running_var[:,None].detach(),var[None,:]))
             # print(varmix.shape)
             varmix = self.mixvar(varmix[None,None,:,:])
+            varmix = varmix.mean(dim=(0,1,2))
             # print(varmix.shape)
-            varmix = self.sigmoid(self.linearVar(varmix).squeeze())
+            varmix = self.sigmoid(self.linearvar(varmix[None,None,:]).squeeze())
             # print(varmix.shape)
-            meanmix = torch.mm(self.running_mean[:,None].detach(),mean[None,:])
+            meanmix = (torch.mm(self.running_mean[:,None].detach(),mean[None,:]))
             # print(meanmix.shape)
             meanmix = self.mixmean(meanmix[None,None,:,:])
+            meanmix = meanmix.mean(dim=(0,1,2))
             # print(meanmix.shape)
-            meanmix = self.sigmoid(self.linearmean(meanmix).squeeze())
+            meanmix = self.sigmoid(self.linearmean(meanmix[None,None,:]).squeeze())
             # print(meanmix.shape)
 
             x.\
@@ -145,20 +147,22 @@ class MixChannel(nn.Module):
         else:
             mean = self.running_mean
             var = self.running_var
-            varmix = torch.mm(self.running_var[:,None],var[None,:])
+            varmix = (torch.mm(self.running_var[:,None].detach(),var[None,:]))
             # print(varmix.shape)
             varmix = self.mixvar(varmix[None,None,:,:])
+            varmix = varmix.mean(dim=(0,1,2))
             # print(varmix.shape)
-            varmix = self.sigmoid(self.linearVar(varmix).squeeze())
+            varmix = self.sigmoid(self.linearvar(varmix[None,None,:]).squeeze())
             # print(varmix.shape)
-            meanmix = torch.mm(self.running_mean[:,None],mean[None,:])
+            meanmix = (torch.mm(self.running_mean[:,None].detach(),mean[None,:]))
             # print(meanmix.shape)
             meanmix = self.mixmean(meanmix[None,None,:,:])
+            meanmix = meanmix.mean(dim=(0,1,2))
             # print(meanmix.shape)
-            meanmix = self.sigmoid(self.linearmean(meanmix).squeeze())
+            meanmix = self.sigmoid(self.linearmean(meanmix[None,None,:]).squeeze())
             x.\
             sub_(mean[None, :, None, None]).\
             div_(torch.pow(var[None, :, None, None], exponent=1/2.) + self.eps)
             x.mul_(0.5*varmix[None, :, None, None]+0.5*meanmix[None, :, None, None])
-        return x
+       
         return x
