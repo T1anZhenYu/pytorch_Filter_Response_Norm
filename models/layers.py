@@ -149,13 +149,13 @@ class MixChannel(nn.Module):
             # print(varmix.shape)
             varmix = self.mixvar(varmix[None,None,:,:])
             # print(varmix.shape)
-            varmix = self.linearVar(varmix).squeeze()
+            varmix = self.sigmoid(self.linearVar(varmix).squeeze())
             # print(varmix.shape)
             meanmix = torch.mm(self.running_mean[:,None],mean[None,:])
             # print(meanmix.shape)
             meanmix = self.mixmean(meanmix[None,None,:,:])
             # print(meanmix.shape)
-            meanmix = self.linearmean(meanmix).squeeze()
+            meanmix = self.sigmoid(self.linearmean(meanmix).squeeze())
             x.\
             sub_(mean[None, :, None, None]).\
             div_(torch.pow(var[None, :, None, None], exponent=1/2.) + self.eps)
