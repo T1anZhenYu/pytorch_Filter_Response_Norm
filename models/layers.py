@@ -125,7 +125,7 @@ class MixChannel(nn.Module):
             self.running_mean.mul_(1 - self.momentum).add_(self.momentum * mean)
             self.running_var.mul_(1 - self.momentum).add_(self.momentum * var)
 
-            varmix = (torch.mm(self.running_var[:,None].detach(),var[None,:]))/math.pow(x.size(1),0.5)
+            varmix = (torch.mm(torch.sqrt(self.running_var[:,None]).detach(),torch.sqrt(var[None,:])))/math.pow(x.size(1),0.5)
             # print(varmix.shape)
             # varmix = self.mixvar(varmix[None,None,:,:])
             varmix = varmix.mean(dim=(0))
@@ -147,7 +147,8 @@ class MixChannel(nn.Module):
         else:
             mean = self.running_mean
             var = self.running_var
-            varmix = (torch.mm(self.running_var[:,None].detach(),var[None,:]))/math.pow(x.size(1),0.5)
+            varmix = (torch.mm(torch.sqrt(self.running_var[:,None]).detach(),torch.sqrt(var[None,:])))\
+            /math.pow(x.size(1),0.5)
             # print(varmix.shape)
             # varmix = self.mixvar(varmix[None,None,:,:])
             varmix = varmix.mean(dim=(0))
