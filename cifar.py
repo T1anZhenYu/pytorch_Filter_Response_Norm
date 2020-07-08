@@ -23,6 +23,8 @@ from progress.bar import Bar
 from utils import Logger, AverageMeter, accuracy, mkdir_p, savefig
 from models.layers import *
 
+import gc 
+
 model_names = sorted(name for name in models.__dict__
     if not name.startswith("__")
     and callable(models.__dict__[name]))
@@ -37,7 +39,7 @@ parser.add_argument('--epochs', default=300, type=int, metavar='N',
                     help='number of total epochs to run')
 parser.add_argument('--train-batch', default=32, type=int, metavar='N',
                     help='train batchsize')
-parser.add_argument('--test-batch', default=100, type=int, metavar='N',
+parser.add_argument('--test-batch', default=32, type=int, metavar='N',
                     help='test batchsize')
 parser.add_argument('--lr', default=0.1, type=float,
                     help='lr')
@@ -355,19 +357,7 @@ def main():
         train_loss, train_acc = train(trainloader, model, criterion, optimizer, epoch,
                                       use_cuda)
         test_loss, test_acc = test(testloader, model, criterion, epoch, use_cuda)
-        for i in range(len(total_param)):
-            if "trainable_var" in total_param[i][0]:
-                for c in range(4):
-                    name = total_param[i][0]
-                    s = name.split(".")
-                    s[-1] = ""
-                    tagname = ".".join(s)+" channel_"+str(c)
-                    # print("tagname:",tagname)
-                    s[-1] ='real_var'
-                    newname = '.'.join(s)
-                    # print(newname," ", total_param[i][1].size())
-                    writer.add_scalars(tagname,{name+".channel_"+str(c):total_param[i][1][c],\
-                    newname+".channel_"+str(c):total_param[i+1][1][c]},epoch)
+
                 # writer.add_scalar(name,params[0],epoch)
         writer.add_scalars('acc',{"test acc":test_acc,"train acc":train_acc},epoch)
         writer.add_scalars('loss',{"test loss":test_loss,"train loss":train_loss},epoch)
@@ -387,10 +377,11 @@ def main():
         }, epoch+1, is_best, checkpoint=args.checkpoint)
 
         scheduler.step()
-
+        gc.collect()
+        torch.cuda.empty_cache()
     logger.close()
     logger.plot()
-    savefig(os.path.join(args.checkpoint, 'log.eps'))
+    # savefig(os.path.join(args.checkpoint, 'log.eps'))
 
     print('Best acc:')
     print(best_acc)

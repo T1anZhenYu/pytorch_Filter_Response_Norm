@@ -116,23 +116,24 @@ class MixChannel(nn.Module):
 
 
     def forward(self, x):
-        n = x.numel() / (x.size(1))
+        n = float(x.size(1))
         if self.training:
             mean = x.mean(dim=(0, 2, 3))
             var = (x - mean[None, :, None, None]).pow(2).mean(dim=(0, 2, 3))
 
             # update the running mean and var
-            self.running_mean.mul_(1 - self.momentum).add_(self.momentum * mean)
-            self.running_var.mul_(1 - self.momentum).add_(self.momentum * var)
+            self.running_mean.mul_(1 - self.momentum).add_(self.momentum * mean.detach())
+            self.running_var.mul_(1 - self.momentum).add_(self.momentum * var.detach())
 
-            varmix = (torch.mm(torch.sqrt(self.running_var[:,None]).detach(),torch.sqrt(var[None,:])))/math.pow(x.size(1),0.5)
+            varmix = (torch.mm(torch.sqrt(self.running_var[:,None]),torch.sqrt(var[None,:])))\
+            /math.pow(n,0.5)
             # print(varmix.shape)
             # varmix = self.mixvar(varmix[None,None,:,:])
             varmix = varmix.mean(dim=(0))
             # print(varmix.shape)
             varmix = self.sigmoid(self.linearvar(varmix[None,None,:]).squeeze())
             # print(varmix.shape)
-            meanmix = (torch.mm(self.running_mean[:,None].detach(),mean[None,:]))/math.pow(x.size(1),0.5)
+            meanmix = (torch.mm(self.running_mean[:,None].detach(),mean[None,:]))/math.pow(n,0.5)
             # print(meanmix.shape)
             # meanmix = self.mixmean(meanmix[None,None,:,:])
             meanmix = meanmix.mean(dim=(0))
@@ -143,27 +144,27 @@ class MixChannel(nn.Module):
             x.\
             sub_(mean[None, :, None, None]).\
             div_(torch.pow(var[None, :, None, None], exponent=1/2.) + self.eps)
-            x.mul_(0.5*varmix[None, :, None, None]+0.5*meanmix[None, :, None, None])
+            # x.mul_(0.5*varmix[None, :, None, None]+0.5*meanmix[None, :, None, None])
+
         else:
-            mean = self.running_mean
-            var = self.running_var
-            varmix = (torch.mm(torch.sqrt(self.running_var[:,None]).detach(),torch.sqrt(var[None,:])))\
-            /math.pow(x.size(1),0.5)
-            # print(varmix.shape)
-            # varmix = self.mixvar(varmix[None,None,:,:])
-            varmix = varmix.mean(dim=(0))
-            # print(varmix.shape)
-            varmix = self.sigmoid(self.linearvar(varmix[None,None,:]).squeeze())
-            # print(varmix.shape)
-            meanmix = (torch.mm(self.running_mean[:,None].detach(),mean[None,:]))/math.pow(x.size(1),0.5)
-            # print(meanmix.shape)
-            # meanmix = self.mixmean(meanmix[None,None,:,:])
-            meanmix = meanmix.mean(dim=(0))
-            # print(meanmix.shape)
-            meanmix = self.sigmoid(self.linearmean(meanmix[None,None,:]).squeeze())
-            x.\
-            sub_(mean[None, :, None, None]).\
-            div_(torch.pow(var[None, :, None, None], exponent=1/2.) + self.eps)
-            x.mul_(0.5*varmix[None, :, None, None]+0.5*meanmix[None, :, None, None])
+            with torch.no_grad():
+                varmix = (torch.mm(torch.sqrt(self.running_var[:,None]),torch.sqrt(self.running_var[None,:])))\
+                /math.pow(x.size(1),0.5)
+                # print(varmix.shape)
+                # varmix = self.mixvar(varmix[None,None,:,:])
+                varmix = varmix.mean(dim=(0))
+                # print(varmix.shape)
+                varmix = self.sigmoid(self.linearvar(varmix[None,None,:]).squeeze())
+                # print(varmix.shape)
+                meanmix = (torch.mm(self.running_mean[:,None],self.running_mean[None,:]))/math.pow(x.size(1),0.5)
+                # print(meanmix.shape)
+                # meanmix = self.mixmean(meanmix[None,None,:,:])
+                meanmix = meanmix.mean(dim=(0))
+                # print(meanmix.shape)
+                meanmix = self.sigmoid(self.linearmean(meanmix[None,None,:]).squeeze())
+                x.\
+                sub_(self.running_mean[None, :, None, None]).\
+                div_(torch.pow(self.running_var[None, :, None, None], exponent=1/2.) + self.eps)
+                # x.mul_(0.5*varmix[None, :, None, None]+0.5*meanmix[None, :, None, None])
        
         return x
