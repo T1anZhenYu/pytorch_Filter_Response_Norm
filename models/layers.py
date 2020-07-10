@@ -105,9 +105,9 @@ class MixChannel(nn.Module):
         self.register_buffer('running_var', torch.ones(num_features))
         ks = 5
         
-        self.mixvar = nn.Conv2d(1, 1, kernel_size=ks , padding=(ks-1) // 2, bias=False) 
+        # self.mixvar = nn.Conv2d(1, 1, kernel_size=ks , padding=(ks-1) // 2, bias=False) 
         self.linearvar = nn.Conv1d(1, 1, kernel_size=ks, padding=(ks-1) // 2, bias=False) 
-        self.mixmean = nn.Conv2d(1, 1, kernel_size=ks , padding=(ks-1) // 2, bias=False) 
+        # self.mixmean = nn.Conv2d(1, 1, kernel_size=ks , padding=(ks-1) // 2, bias=False) 
         self.linearmean = nn.Conv1d(1, 1, kernel_size=ks, padding=(ks-1) // 2, bias=False) 
         # self.mixmean = nn.Conv1d(1, 1, kernel_size=ks, padding=(ks-1) // 2, bias=False) 
         self.sigmoid = nn.Sigmoid()
@@ -116,14 +116,21 @@ class MixChannel(nn.Module):
 
 
     def forward(self, x):
-        n = float(x.size(1))
+        # x = x.double()
+        n = x.numel() / (x.size(1))
         if self.training:
             mean = x.mean(dim=(0, 2, 3))
             var = (x - mean[None, :, None, None]).pow(2).mean(dim=(0, 2, 3))
 
             # update the running mean and var
-            self.running_mean.mul_(1 - self.momentum).add_(self.momentum * mean.detach())
-            self.running_var.mul_(1 - self.momentum).add_(self.momentum * var.detach())
+            with torch.no_grad():
+                # self.running_mean = 0.01 * mean \
+                #                     + (1 - 0.01) * self.running_mean
+                # update running_var with unbiased var
+                self.running_mean = self.momentum * mean  \
+                                   + (1 - self.momentum) * self.running_mean
+                self.running_var = self.momentum * var * n / (n - 1) \
+                                   + (1 - self.momentum) * self.running_var
 
             # varmix = (torch.mm(torch.sqrt(self.running_var[:,None]),torch.sqrt(var[None,:])))\
             # /math.pow(n,0.5)
@@ -139,7 +146,7 @@ class MixChannel(nn.Module):
             # meanmix = meanmix.mean(dim=(0))
             # # print(meanmix.shape)
             # meanmix = self.sigmoid(self.linearmean(meanmix[None,None,:]).squeeze())
-            # print(meanmix.shape)
+            # # print(meanmix.shape)
 
             x.\
             sub_(mean[None, :, None, None]).\
@@ -148,10 +155,10 @@ class MixChannel(nn.Module):
 
         else:
             with torch.no_grad():
-                varmix = (torch.mm(torch.sqrt(self.running_var[:,None]),torch.sqrt(self.running_var[None,:])))\
-                /math.pow(x.size(1),0.5)
-                # print(varmix.shape)
-                # varmix = self.mixvar(varmix[None,None,:,:])
+                # varmix = (torch.mm(torch.sqrt(self.running_var[:,None]),torch.sqrt(self.running_var[None,:])))\
+                # /math.pow(x.size(1),0.5)
+                # # print(varmix.shape)
+                # # varmix = self.mixvar(varmix[None,None,:,:])
                 # varmix = varmix.mean(dim=(0))
                 # # print(varmix.shape)
                 # varmix = self.sigmoid(self.linearvar(varmix[None,None,:]).squeeze())
@@ -162,6 +169,8 @@ class MixChannel(nn.Module):
                 # meanmix = meanmix.mean(dim=(0))
                 # # print(meanmix.shape)
                 # meanmix = self.sigmoid(self.linearmean(meanmix[None,None,:]).squeeze())
+                # print("runningmean:",self.running_mean)
+                # print("runningvar:",self.running_var)
                 x.\
                 sub_(self.running_mean[None, :, None, None]).\
                 div_(torch.pow(self.running_var[None, :, None, None], exponent=1/2.) + self.eps)
