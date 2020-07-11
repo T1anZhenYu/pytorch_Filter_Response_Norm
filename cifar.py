@@ -302,7 +302,7 @@ def main():
 
     if not args.standard_bn:
         print("after change")
-        model,numBN = convert_layers(model,initvalue=args.varlearn_initvalue)
+        model,numBN = convert_layers(model)
         print(model)
         print('numbn:',numBN)
     else:

@@ -96,12 +96,12 @@ class MixChannel(nn.BatchNorm2d):
         # self.mixmean = nn.Conv1d(1, 1, kernel_size=ks, padding=(ks-1) // 2, bias=False) 
         self.sigmoid = nn.Sigmoid()
 
-    def forward(self, input):
+    def forward(self, x):
         if self.training:
-            n = input.numel() / (input.size(1))
+            n = x.numel() / (x.size(1))
 
-            mean = input.mean(dim=(0, 2, 3),keepdim=True)
-            var = (input-mean).pow(2).mean(dim=(0,2, 3),keepdim=True)
+            mean = x.mean(dim=(0, 2, 3),keepdim=True)
+            var = (x-mean).pow(2).mean(dim=(0,2, 3),keepdim=True)
             # var = torch.clamp(var,min=0.05,max=4)
             var = var.squeeze()
             mean = mean.squeeze()
@@ -129,7 +129,7 @@ class MixChannel(nn.BatchNorm2d):
                 self.running_var = self.momentum * var * n / (n - 1) \
                                    + (1 - self.momentum) * self.running_var
 
-            input = (input-mean[None, :, None, None]) / (torch.sqrt(var[None, :, None, None] + self.eps))
+            x = (x-mean[None, :, None, None]) / (torch.sqrt(var[None, :, None, None] + self.eps))
             # x.mul_(0.5*varmix[None, :, None, None]+0.5*meanmix[None, :, None, None])
         else:
             mean = self.running_mean
@@ -149,5 +149,6 @@ class MixChannel(nn.BatchNorm2d):
             # # print(meanmix.shape)
             # meanmix = self.sigmoid(self.linearmean(meanmix[None,None,:]).squeeze())
             # # print(meanmix.shape)
-            input = (input-mean[None, :, None, None]) / (torch.sqrt(var[None, :, None, None] + self.eps))
+            x = (x-mean[None, :, None, None]) / (torch.sqrt(var[None, :, None, None] + self.eps))
             # x.mul_(0.5*varmix[None, :, None, None]+0.5*meanmix[None, :, None, None])
+        return x
