@@ -5,3 +5,4 @@ from .densnet import *
 from .vgg import *
 from .inception import  *
 
+from .resnet_mixchannel import *
