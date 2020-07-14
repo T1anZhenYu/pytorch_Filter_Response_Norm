@@ -106,6 +106,8 @@ class MixChannel(nn.Module):
         #     )
 
     def forward(self, x):
+        with torch.no_grad():
+            n = x.numel() / (x.size(1))
         if self.training:
             mean = x.mean(dim=(0, 2, 3))
             var = (x-mean[None, :, None, None]).pow(2).mean(dim=(0,2, 3))
