@@ -80,16 +80,10 @@ class GradBatchNorm(nn.BatchNorm2d):
         return y
 
 
-
 class MixChannel(nn.Module):
-    def __init__(self, num_features, eps=1e-05, momentum=0.9, affine=True):
-        """
-        Input Variables:
-        ----------------
-            bias, weight, tau: Variables of shape [1, C, 1, 1].
-            eps: A scalar constant or learnable variable.
-        """
+    expansion = 1
 
+    def __init__(self, num_features, eps=1e-05, momentum=0.9, affine=True):
         super(MixChannel, self).__init__()
         ks = 5
         
@@ -98,54 +92,58 @@ class MixChannel(nn.Module):
         # self.mixmean = nn.Conv2d(1, 1, kernel_size=ks , padding=(ks-1) // 2, bias=False) 
         self.linearmean = nn.Conv1d(1, 1, kernel_size=ks, padding=(ks-1) // 2, bias=False) 
         # self.mixmean = nn.Conv1d(1, 1, kernel_size=ks, padding=(ks-1) // 2, bias=False) 
+
         self.sigmoid = nn.Sigmoid()
-        
         self.bn = nn.BatchNorm2d(num_features,affine = False)
+        # self.bn2 = nn.BatchNorm2d(planes,affine=False)
+
+        # self.shortcut = nn.Sequential()
+        # if stride != 1 or in_planes != self.expansion*planes:
+        #     self.shortcut = nn.Sequential(
+        #         nn.Conv2d(in_planes, self.expansion*planes,
+        #                   kernel_size=1, stride=stride, bias=False),
+        #         nn.BatchNorm2d(self.expansion*planes)
+        #     )
 
     def forward(self, x):
-        n = x.numel() / (x.size(1))
-        # if self.training:
-            # mean = x.mean(dim=(0, 2, 3))
-            # var = (x-mean[None, :, None, None]).pow(2).mean(dim=(0,2, 3))
+        if self.training:
+            mean = x.mean(dim=(0, 2, 3))
+            var = (x-mean[None, :, None, None]).pow(2).mean(dim=(0,2, 3))
 
-            # varmix = (torch.mm(torch.sqrt(self.bn.running_var[:,None]),torch.sqrt(var[None,:])))\
-            # /math.pow(n,0.5)
-            # # print(varmix.shape)
-            # # varmix = self.mixvar(varmix[None,None,:,:])
-            # varmix = varmix.mean(dim=(0))
-            # # print(varmix.shape)
-            # varmix = self.sigmoid(self.linearvar(varmix[None,None,:]).squeeze())
-            # # print(varmix.shape)
-            # meanmix = (torch.mm(self.bn.running_mean[:,None],mean[None,:]))/math.pow(n,0.5)
-            # # print(meanmix.shape)
-            # # meanmix = self.mixmean(meanmix[None,None,:,:])
-            # meanmix = meanmix.mean(dim=(0))
-            # # print(meanmix.shape)
-            # meanmix = self.sigmoid(self.linearmean(meanmix[None,None,:]).squeeze())
+            varmix = (torch.mm(torch.sqrt(self.bn.running_var[:,None]),torch.sqrt(var[None,:])))\
+            /math.pow(n,0.5)
+            # print(varmix.shape)
+            # varmix = self.mixvar(varmix[None,None,:,:])
+            varmix = varmix.mean(dim=(0))
+            # print(varmix.shape)
+            varmix = self.sigmoid(self.linearvar(varmix[None,None,:]).squeeze())
+            # print(varmix.shape)
+            meanmix = (torch.mm(self.bn.running_mean[:,None],mean[None,:]))/math.pow(n,0.5)
+            # print(meanmix.shape)
+            # meanmix = self.mixmean(meanmix[None,None,:,:])
+            meanmix = meanmix.mean(dim=(0))
+            # print(meanmix.shape)
+            meanmix = self.sigmoid(self.linearmean(meanmix[None,None,:]).squeeze())
             # print(meanmix.shape)
 
 
-        # else:
-        #     with torch.no_grad():
-                # varmix = (torch.mm(torch.sqrt(self.bn.running_var[:,None]),\
-                #                    torch.sqrt(self.bn.running_var[None,:])))/math.pow(n,0.5)
-                # # print(varmix.shape)
-                # # varmix = self.mixvar(varmix[None,None,:,:])
-                # varmix = varmix.mean(dim=(0))
-                # # print(varmix.shape)
-                # varmix = self.sigmoid(self.linearvar(varmix[None,None,:]).squeeze())
-                # # print(varmix.shape)
-                # meanmix = (torch.mm(self.bn.running_mean[:,None],self.bn.running_mean[None,:]))/math.pow(n,0.5)
-                # # print(meanmix.shape)
-                # # meanmix = self.mixmean(meanmix[None,None,:,:])
-                # meanmix = meanmix.mean(dim=(0))
-                # # print(meanmix.shape)
-                # meanmix = self.sigmoid(self.linearmean(meanmix[None,None,:]).squeeze())
-                # # print(meanmix.shape)
-
-                # x = self.bn(x)
-                # x.mul_(0.5*varmix[None, :, None, None]+0.5*meanmix[None, :, None, None])
-        x = self.bn(x)
-        # x.mul_(0.5*varmix[None, :, None, None]+0.5*meanmix[None, :, None, None])
-       
-        return x
+        else:
+            with torch.no_grad():
+                varmix = (torch.mm(torch.sqrt(self.bn.running_var[:,None]),\
+                                   torch.sqrt(self.bn.running_var[None,:])))/math.pow(n,0.5)
+                # print(varmix.shape)
+                # varmix = self.mixvar(varmix[None,None,:,:])
+                varmix = varmix.mean(dim=(0))
+                # print(varmix.shape)
+                varmix = self.sigmoid(self.linearvar(varmix[None,None,:]).squeeze())
+                # print(varmix.shape)
+                meanmix = (torch.mm(self.bn.running_mean[:,None],self.bn.running_mean[None,:]))/math.pow(n,0.5)
+                # print(meanmix.shape)
+                # meanmix = self.mixmean(meanmix[None,None,:,:])
+                meanmix = meanmix.mean(dim=(0))
+                # print(meanmix.shape)
+                meanmix = self.sigmoid(self.linearmean(meanmix[None,None,:]).squeeze())
+                # print(meanmix.shape)
+        out = self.bn(x)
+        # out.mul_(0.5*varmix[None, :, None, None]+0.5*meanmix[None, :, None, None])
+        return out
