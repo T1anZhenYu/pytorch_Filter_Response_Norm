@@ -104,7 +104,7 @@ class MixChannel(nn.Module):
 
     def forward(self, x):
         n = x.numel() / (x.size(1))
-        if self.training:
+        # if self.training:
             # mean = x.mean(dim=(0, 2, 3))
             # var = (x-mean[None, :, None, None]).pow(2).mean(dim=(0,2, 3))
 
@@ -124,10 +124,9 @@ class MixChannel(nn.Module):
             # meanmix = self.sigmoid(self.linearmean(meanmix[None,None,:]).squeeze())
             # print(meanmix.shape)
 
-            x = self.bn(x)
-            # x.mul_(0.5*varmix[None, :, None, None]+0.5*meanmix[None, :, None, None])
-        else:
-            with torch.no_grad():
+
+        # else:
+        #     with torch.no_grad():
                 # varmix = (torch.mm(torch.sqrt(self.bn.running_var[:,None]),\
                 #                    torch.sqrt(self.bn.running_var[None,:])))/math.pow(n,0.5)
                 # # print(varmix.shape)
@@ -144,7 +143,9 @@ class MixChannel(nn.Module):
                 # meanmix = self.sigmoid(self.linearmean(meanmix[None,None,:]).squeeze())
                 # # print(meanmix.shape)
 
-                x = self.bn(x)
+                # x = self.bn(x)
                 # x.mul_(0.5*varmix[None, :, None, None]+0.5*meanmix[None, :, None, None])
+        x = self.bn(x)
+        # x.mul_(0.5*varmix[None, :, None, None]+0.5*meanmix[None, :, None, None])
        
         return x
