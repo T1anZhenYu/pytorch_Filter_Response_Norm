@@ -97,8 +97,9 @@ class MixChannel(nn.Module):
 
 
     def forward(self, x):
+        n = x.numel() / (x.size(1))
         if self.training:
-            n = x.numel() / (x.size(1))
+            
             mean = x.mean(dim=(0, 2, 3))
             var = (x-mean[None, :, None, None]).pow(2).mean(dim=(0,2, 3))
 
