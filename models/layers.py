@@ -112,9 +112,10 @@ class MixChannel(nn.Module):
 
             meanmix = self.sigmoid(self.linearmean(meanmix[None,None,:]).squeeze())
             
-            combine = torch.cat((varmix[None,None,None,:],meanmix[None,None,None,:]),1)
+            index = 0.5*meanmix + 0.5 * varmix
+            # combine = torch.cat((varmix[None,None,None,:],meanmix[None,None,None,:]),1)
 
-            index = self.combine(combine).squeeze()
+            # index = self.combine(combine).squeeze()
             # print("index:",index.shape)
             # print(meanmix.shape)
         else:
@@ -130,10 +131,10 @@ class MixChannel(nn.Module):
             meanmix = indexmean * mean 
 
             meanmix = self.sigmoid(self.linearmean(meanmix[None,None,:]).squeeze())
-            
-            combine = torch.cat((varmix[None,None,None,:],meanmix[None,None,None,:]),1)
+            index = 0.5*meanmix + 0.5 * varmix
+            # combine = torch.cat((varmix[None,None,None,:],meanmix[None,None,None,:]),1)
 
-            index = self.combine(combine).squeeze()
+            # index = self.combine(combine).squeeze()
         out = self.bn(x)
         out.mul_(index[None,:,None,None])
         return out
