@@ -135,5 +135,5 @@ class MixChannel(nn.Module):
             meanmix = self.sigmoid(self.linearmean(meanmix[None,None,:]).squeeze())
             # print(meanmix.shape)
         out = self.bn(x)
-        # out.mul_(0.5*varmix[None, :, None, None]+0.5*meanmix[None, :, None, None])
+        out.mul_(0.5*varmix[None, :, None, None]+0.5*meanmix[None, :, None, None])
         return out
