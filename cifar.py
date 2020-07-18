@@ -301,7 +301,7 @@ def main():
         model = models.__dict__[args.arch](num_classes=num_classes)
 
 
-    noAffine(model)
+    # noAffine(model)
     print(model)
     model = torch.nn.DataParallel(model).cuda()
     cudnn.benchmark = True

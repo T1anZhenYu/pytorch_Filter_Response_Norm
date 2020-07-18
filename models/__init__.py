@@ -6,3 +6,4 @@ from .vgg import *
 from .inception import  *
 
 from .resnet_mixchannel import *
+from .densnet_mixchannel import * 

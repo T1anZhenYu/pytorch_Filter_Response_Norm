@@ -93,7 +93,7 @@ class MixChannel(nn.Module):
         # self.mixmean = nn.Conv1d(1, 1, kernel_size=ks, padding=(ks-1) // 2, bias=False) 
 
         self.sigmoid = nn.Sigmoid()
-        self.bn = nn.BatchNorm2d(num_features,affine = False)
+        self.bn = nn.BatchNorm2d(num_features)
 
 
     def forward(self, x):
