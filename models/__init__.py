@@ -7,3 +7,4 @@ from .inception import  *
 
 from .resnet_mixchannel import *
 from .densnet_mixchannel import * 
+from .inception_mixchannel import *
