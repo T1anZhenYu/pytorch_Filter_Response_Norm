@@ -37,9 +37,9 @@ parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
 # Optimization options
 parser.add_argument('--epochs', default=300, type=int, metavar='N',
                     help='number of total epochs to run')
-parser.add_argument('--train-batch', default=32, type=int, metavar='N',
+parser.add_argument('--train_batch', default=32, type=int, metavar='N',
                     help='train batchsize')
-parser.add_argument('--test-batch', default=32, type=int, metavar='N',
+parser.add_argument('--test_batch', default=32, type=int, metavar='N',
                     help='test batchsize')
 parser.add_argument('--lr', default=0.1, type=float,
                     help='lr')
@@ -74,7 +74,7 @@ parser.add_argument('--manualSeed', type=int, help='manual seed')
 parser.add_argument('-e', '--evaluate', dest='evaluate', action='store_true',
                     help='evaluate model on validation set')
 #Device options
-parser.add_argument('--gpu-id', default='0', type=str,
+parser.add_argument('--gpu_id', default='0', type=str,
                     help='id(s) for CUDA_VISIBLE_DEVICES')
 
 args = parser.parse_args()
