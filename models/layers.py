@@ -83,8 +83,9 @@ class MixChannel(nn.Module):
 
     def __init__(self, num_features, eps=1e-05, momentum=0.9, affine=True):
         super(MixChannel, self).__init__()
-        ks = 5
-        
+
+        t = int(abs((math.log(num_features, 2) + b) / gamma))
+        ks = t if t % 2 else t + 1
         # self.mixvar = nn.Conv2d(1, 1, kernel_size=ks , padding=(ks-1) // 2, bias=False) 
         self.linearvar = nn.Conv1d(1, 1, kernel_size=ks, padding=(ks-1) // 2, bias=False) 
         # self.mixmean = nn.Conv2d(1, 1, kernel_size=ks , padding=(ks-1) // 2, bias=False) 
@@ -140,22 +141,19 @@ class MixChannel(nn.Module):
         return out
 
 
-class eca_layer(nn.Module):
-    """Constructs a ECA module.
-    Args:
-        channel: Number of channels of the input feature map
-        k_size: Adaptive selection of kernel size
-    """
-    def __init__(self, channel, k_size=3):
-        super(eca_layer, self).__init__()
+class EcaLayer(nn.Module):
+
+    def __init__(self, channels, gamma=2, b=1):
+        super(EcaLayer, self).__init__()
         self.avg_pool = nn.AdaptiveAvgPool2d(1)
-        self.conv = nn.Conv1d(1, 1, kernel_size=k_size, padding=(k_size - 1) // 2, bias=False) 
+
+        t = int(abs((math.log(channels, 2) + b) / gamma))
+        k_size = t if t % 2 else t + 1
+        self.conv = nn.Conv1d(1, 1, kernel_size=k_size, padding=(k_size - 1) // 2, bias=False)
+
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
-        # x: input features with shape [b, c, h, w]
-        b, c, h, w = x.size()
-
         # feature descriptor on the global spatial information
         y = self.avg_pool(x)
 
