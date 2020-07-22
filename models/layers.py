@@ -81,7 +81,7 @@ class GradBatchNorm(nn.BatchNorm2d):
 
 class MixChannel(nn.Module):
 
-    def __init__(self, num_features, eps=1e-05, momentum=0.9, affine=True):
+    def __init__(self, num_features, eps=1e-05, momentum=0.9, affine=True, gamma=2, b=1):
         super(MixChannel, self).__init__()
 
         t = int(abs((math.log(num_features, 2) + b) / gamma))
@@ -94,22 +94,24 @@ class MixChannel(nn.Module):
         self.combine = nn.Conv2d(2,1,kernel_size=ks, padding=(ks-1) // 2, bias=False)
         self.sigmoid = nn.Sigmoid()
         self.bn = nn.BatchNorm2d(num_features)
+        self.momentum = momentum
 
 
     def forward(self, x):
         n = x.numel() / (x.size(1))
         if self.training:
             
-            mean = x.mean(dim=(0, 2, 3))
-            var = (x-mean[None, :, None, None]).pow(2).mean(dim=(0,2, 3))
+            mean = self.momentum*self.bn.running_mean + (1-self.momentum)* x.mean(dim=(0, 2, 3))
+            var = (1-self.momentum)*(x-mean[None, :, None, None]).pow(2).mean(dim=(0,2, 3))\
+            * self.momentum * self.bn.running_var
 
-            indexvar = torch.sqrt(self.bn.running_var).mean()/math.pow(n,0.5)
-            indexmean = self.bn.running_mean.mean()/math.pow(n,0.5)
+            # indexvar = torch.sqrt(self.bn.running_var).mean()/math.pow(n,0.5)
+            # indexmean = self.bn.running_mean.mean()/math.pow(n,0.5)
 
-            varmix = indexvar * torch.sqrt(var)
+            varmix = torch.sqrt(var)
             varmix = self.sigmoid(self.linearvar(varmix[None,None,:]).squeeze())
 
-            meanmix = indexmean * mean 
+            meanmix = mean 
 
             meanmix = self.sigmoid(self.linearmean(meanmix[None,None,:]).squeeze())
             
@@ -123,15 +125,13 @@ class MixChannel(nn.Module):
             mean = self.bn.running_mean
             var = self.bn.running_var
 
-            indexvar = torch.sqrt(self.bn.running_var).mean()/math.pow(n,0.5)
-            indexmean = self.bn.running_mean.mean()/math.pow(n,0.5)
-
-            varmix = indexvar * torch.sqrt(var)
+            varmix = torch.sqrt(var)
             varmix = self.sigmoid(self.linearvar(varmix[None,None,:]).squeeze())
 
-            meanmix = indexmean * mean 
+            meanmix = mean 
 
             meanmix = self.sigmoid(self.linearmean(meanmix[None,None,:]).squeeze())
+            
             index = 0.5*meanmix + 0.5 * varmix
             # combine = torch.cat((varmix[None,None,None,:],meanmix[None,None,None,:]),1)
 
