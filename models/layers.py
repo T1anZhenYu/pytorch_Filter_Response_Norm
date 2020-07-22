@@ -102,13 +102,13 @@ class MixChannel(nn.Module):
         if self.training:
             
             mean = self.momentum*self.bn.running_mean + (1-self.momentum)* x.mean(dim=(0, 2, 3))
-            var = (1-self.momentum)*(x-mean[None, :, None, None]).pow(2).mean(dim=(0,2, 3))\
-            * self.momentum * self.bn.running_var
+            var = (1-self.momentum)*torch.sqrt((x-mean[None, :, None, None]).pow(2).mean(dim=(0,2, 3)))\
+            * self.momentum *torch.sqrt(self.bn.running_var)
 
             # indexvar = torch.sqrt(self.bn.running_var).mean()/math.pow(n,0.5)
             # indexmean = self.bn.running_mean.mean()/math.pow(n,0.5)
 
-            varmix = torch.sqrt(var)
+            varmix = var
             varmix = self.sigmoid(self.linearvar(varmix[None,None,:]).squeeze())
 
             meanmix = mean 
@@ -123,9 +123,9 @@ class MixChannel(nn.Module):
             # print(meanmix.shape)
         else:
             mean = self.bn.running_mean
-            var = self.bn.running_var
+            var = torch.sqrt(self.bn.running_var)
 
-            varmix = torch.sqrt(var)
+            varmix = var
             varmix = self.sigmoid(self.linearvar(varmix[None,None,:]).squeeze())
 
             meanmix = mean 
@@ -140,7 +140,37 @@ class MixChannel(nn.Module):
         out.mul_(index[None,:,None,None])
         return out
 
+class NewBN(nn.Module):
+    def __init__(self,num_features, eps=1e-05, momentum=0.9, affine=True, gamma=2, b=1):
+        super(NewBN,self).__init__()
+        self.bn = nn.BatchNorm2d(num_features)
+        t = int(abs((math.log(num_features, 2) + b) / gamma))
+        ks = t if t % 2 else t + 1
 
+        self.sigmoid = nn.Sigmoid()
+        self.conv1 = nn.Conv2d(1,int(num_features/4),kernel_size=(2,1),bias=False)
+        self.conv2 =  nn.Conv1d(int(num_features/4), 1, kernel_size=ks, padding=(ks-1) // 2, bias=False) 
+        self.momentum = momentum
+    def forward(self,x):
+        n = x.numel() / (x.size(1))
+        if self.training:
+            
+            mean = self.momentum*self.bn.running_mean + (1-self.momentum)* x.mean(dim=(0, 2, 3))
+            var = (1-self.momentum)*torch.sqrt((x-mean[None, :, None, None]).pow(2).mean(dim=(0,2, 3)))\
+            * self.momentum *torch.sqrt(self.bn.running_var)
+            combine = torch.cat((mean[None,None,None,:],var[None,None,None,:]),2)
+            combine = self.conv1(combine).squeeze() 
+            combine = self.conv2(combine[None,:,:]).squeeze()
+
+        else:
+            mean = self.bn.running_mean
+            var = torch.sqrt(self.bn.running_var)
+            combine = torch.cat((mean[None,None,None,:],var[None,None,None,:]),2)
+            combine = self.conv1(combine).squeeze()
+            combine = self.conv2(combine[None,:,:]).squeeze()
+        out = self.bn(x)
+        out.mul_(combine[None,:,None,None])
+        return out      
 class EcaLayer(nn.Module):
 
     def __init__(self, channels, gamma=2, b=1):
