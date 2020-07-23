@@ -102,13 +102,13 @@ class MixChannel(nn.Module):
         if self.training:
             
             mean = self.momentum*self.bn.running_mean + (1-self.momentum)* x.mean(dim=(0, 2, 3))
-            var = (1-self.momentum)*torch.sqrt((x-mean[None, :, None, None]).pow(2).mean(dim=(0,2, 3)))\
-            * self.momentum *torch.sqrt(self.bn.running_var)
+            var = (x-mean[None, :, None, None]).pow(2).mean(dim=(0,2, 3))
+            var = self.momentum *self.bn.running_var + (1-self.momentum)*var 
 
             # indexvar = torch.sqrt(self.bn.running_var).mean()/math.pow(n,0.5)
             # indexmean = self.bn.running_mean.mean()/math.pow(n,0.5)
 
-            varmix = var
+            varmix = torch.sqrt(var)
             varmix = self.sigmoid(self.linearvar(varmix[None,None,:]).squeeze())
 
             meanmix = mean 
