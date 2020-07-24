@@ -81,7 +81,7 @@ class GradBatchNorm(nn.BatchNorm2d):
 
 class MixChannel(nn.Module):
 
-    def __init__(self, num_features, eps=1e-05, momentum=0.9, affine=True, gamma=2, b=1):
+    def __init__(self, num_features, eps=1e-05, momentum=0.1, affine=True, gamma=2, b=1):
         super(MixChannel, self).__init__()
 
         t = int(abs((math.log(num_features, 2) + b) / gamma))
@@ -103,12 +103,12 @@ class MixChannel(nn.Module):
             
             mean = self.momentum*self.bn.running_mean + (1-self.momentum)* x.mean(dim=(0, 2, 3))
             var = (x-mean[None, :, None, None]).pow(2).mean(dim=(0,2, 3))
-            var = self.momentum *torch.sqrt(self.bn.running_var) + (1-self.momentum)*torch.sqrt(var)
+            var = self.momentum *self.bn.running_var + (1-self.momentum)*var
 
             # indexvar = torch.sqrt(self.bn.running_var).mean()/math.pow(n,0.5)
             # indexmean = self.bn.running_mean.mean()/math.pow(n,0.5)
 
-            varmix = var
+            varmix = torch.sqrt(var)
             varmix = self.sigmoid(self.linearvar(varmix[None,None,:]).squeeze())
 
             meanmix = mean 
@@ -157,7 +157,7 @@ class NewBN(nn.Module):
             
             mean = self.momentum*self.bn.running_mean + (1-self.momentum)* x.mean(dim=(0, 2, 3))
             var = (1-self.momentum)*torch.sqrt((x-mean[None, :, None, None]).pow(2).mean(dim=(0,2, 3)))\
-            * self.momentum *torch.sqrt(self.bn.running_var)
+            + self.momentum *torch.sqrt(self.bn.running_var)
             combine = torch.cat((mean[None,None,None,:],var[None,None,None,:]),2)
             combine = self.conv1(combine).squeeze() 
             combine = self.conv2(combine[None,:,:]).squeeze()
