@@ -146,31 +146,53 @@ class NewBN(nn.Module):
         self.bn = nn.BatchNorm2d(num_features)
         t = int(abs((math.log(num_features, 2) + b) / gamma))
         ks = t if t % 2 else t + 1
-
+        
         self.sigmoid = nn.Sigmoid()
-        self.conv1 = nn.Conv2d(1,int(num_features/4),kernel_size=(2,1),bias=False)
-        self.conv2 =  nn.Conv1d(int(num_features/4), 1, kernel_size=ks, padding=(ks-1) // 2, bias=False) 
+        self.convmean = nn.Conv2d(1,ks,kernel_size=(2,1),bias=False)
+        self.convvar= nn.Conv2d(1,ks,kernel_size=(2,1),bias=False)
+        self.conv1= nn.Conv2d(ks,ks,kernel_size=(2,1),bias=False)
+        self.conv2 =  nn.Conv1d(ks, 1, kernel_size=ks, padding=(ks-1) // 2, bias=False) 
         self.momentum = momentum
     def forward(self,x):
-        n = x.numel() / (x.size(1))
+        # n = x.numel() / (x.size(1))
         if self.training:
-            
-            mean = self.momentum*self.bn.running_mean + (1-self.momentum)* x.mean(dim=(0, 2, 3))
-            var = (1-self.momentum)*torch.sqrt((x-mean[None, :, None, None]).pow(2).mean(dim=(0,2, 3)))\
-            + self.momentum *torch.sqrt(self.bn.running_var)
-            combine = torch.cat((mean[None,None,None,:],var[None,None,None,:]),2)
-            combine = self.conv1(combine).squeeze() 
-            combine = self.conv2(combine[None,:,:]).squeeze()
+            # print("in train")
+            mean = (1-self.momentum)* x.mean(dim=(0, 2, 3))
+            var = (x-mean[None, :, None, None]).pow(2).mean(dim=(0,2, 3))
+
+            meancombine = torch.cat((mean[None,None,None,:],self.bn.running_mean[None,None,None,:]),2)
+            varcombine = torch.sqrt(torch.cat((var[None,None,None,:],self.bn.running_var[None,None,None,:]),2))
+            # print("after sqrt:",varcombine.shape)
+            meancombine = F.relu(self.convmean(meancombine)).squeeze()
+            varcombine = F.relu(self.convvar(varcombine)).squeeze()
+            # print("var combine:",varcombine.shape)
+            combine = torch.cat((meancombine[:,None,:],varcombine[:,None,:]),1)
+            # print("after cat:",combine.shape)
+            combine = F.relu(self.conv1(combine[None,:,:,:])).squeeze()
+            # print("after conv1:",combine.shape)
+            combine =self.sigmoid(self.conv2(combine[None,:,:]).squeeze())
+            # print("after conv2:",combine.shape)
 
         else:
+            # print("in test")
             mean = self.bn.running_mean
-            var = torch.sqrt(self.bn.running_var)
-            combine = torch.cat((mean[None,None,None,:],var[None,None,None,:]),2)
-            combine = self.conv1(combine).squeeze()
-            combine = self.conv2(combine[None,:,:]).squeeze()
+            var = self.bn.running_var
+            meancombine = torch.cat((mean[None,None,None,:],self.bn.running_mean[None,None,None,:]),2)
+            varcombine = torch.sqrt(torch.cat((var[None,None,None,:],self.bn.running_var[None,None,None,:]),2))
+            # print("after sqrt:",varcombine.shape)
+            meancombine = F.relu(self.convmean(meancombine)).squeeze()
+            varcombine = F.relu(self.convvar(varcombine)).squeeze()
+            # print("var combine:",varcombine.shape)
+            combine = torch.cat((meancombine[:,None,:],varcombine[:,None,:]),1)
+            # print("after cat:",combine.shape)
+            combine = F.relu(self.conv1(combine[None,:,:,:])).squeeze()
+            # print("after conv1:",combine.shape)
+            combine =self.sigmoid(self.conv2(combine[None,:,:]).squeeze())
+            # print("after conv2:",combine.shape)
+
         out = self.bn(x)
         out.mul_(combine[None,:,None,None])
-        return out      
+        return out       
 class EcaLayer(nn.Module):
 
     def __init__(self, channels, gamma=2, b=1):
