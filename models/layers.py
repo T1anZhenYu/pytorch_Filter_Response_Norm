@@ -158,12 +158,11 @@ class NewBN(nn.Module):
             mean = (1-self.momentum)* x.mean(dim=(0, 2, 3))
             var = (x-mean[None, :, None, None]).pow(2).mean(dim=(0,2, 3))
 
-            # indexvar = torch.sqrt(self.bn.running_var).mean()/math.pow(n,0.5)
-            # indexmean = self.bn.running_mean.mean()/math.pow(n,0.5)
-            indexvar = 1/math.pow(n,0.5)
-            indexmean = 1/math.pow(n,0.5)
-            varmix = indexvar * torch.sqrt(var)
-            meanmix = indexmean * mean 
+            indexvar = torch.sqrt(self.bn.running_var).mean()/math.pow(n,0.5)
+            indexmean = self.bn.running_mean.mean()
+
+            varmix = indexvar * torch.sqrt(self.momentum* var + (1-self.momentum)*self.bn.running_var)
+            meanmix = indexmean * (self.momentum * mean + (1-self.momentum) * self.bn.running_mean)
 
             combine = torch.cat((meanmix[None,None,None,:],varmix[None,None,None,:]),2)
             combine = F.relu(self.conv0(combine)).squeeze()
@@ -176,10 +175,9 @@ class NewBN(nn.Module):
             mean = self.bn.running_mean
             var = self.bn.running_var
 
-            # indexvar = torch.sqrt(self.bn.running_var).mean()/math.pow(n,0.5)
-            # indexmean = self.bn.running_mean.mean()/math.pow(n,0.5)
-            indexvar = 1/math.pow(n,0.5)
-            indexmean = 1/math.pow(n,0.5)
+            indexvar = torch.sqrt(self.bn.running_var).mean()/math.pow(n,0.5)
+            indexmean = self.bn.running_mean.mean()
+
             varmix = indexvar * torch.sqrt(var)
             meanmix = indexmean * mean 
 
