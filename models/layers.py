@@ -152,14 +152,14 @@ class NewBN(nn.Module):
         self.conv1 =  nn.Conv1d(int(num_features/4), 1, kernel_size=ks, padding=ks // 2, bias=False) 
         self.momentum = momentum
     def forward(self,x):
-        n = x.numel() / (x.size(1))
+        n = x.numel() / (x.size(0))
         if self.training:
             # print("in train")
             mean = (1-self.momentum)* x.mean(dim=(0, 2, 3))
             var = (x-mean[None, :, None, None]).pow(2).mean(dim=(0,2, 3))
 
             indexvar = torch.sqrt(self.bn.running_var).mean()/math.pow(n,0.5)
-            indexmean = self.bn.running_mean.mean()
+            indexmean = self.bn.running_mean.mean()/math.pow(n,0.5)
 
             varmix = indexvar * torch.sqrt(self.momentum* var + (1-self.momentum)*self.bn.running_var)
             meanmix = indexmean * (self.momentum * mean + (1-self.momentum) * self.bn.running_mean)
@@ -176,7 +176,7 @@ class NewBN(nn.Module):
             var = self.bn.running_var
 
             indexvar = torch.sqrt(self.bn.running_var).mean()/math.pow(n,0.5)
-            indexmean = self.bn.running_mean.mean()
+            indexmean = self.bn.running_mean.mean()/math.pow(n,0.5)
 
             varmix = indexvar * torch.sqrt(var)
             meanmix = indexmean * mean 
