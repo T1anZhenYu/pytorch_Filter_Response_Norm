@@ -145,50 +145,56 @@ class NewBN(nn.Module):
         super(NewBN,self).__init__()
         self.bn = nn.BatchNorm2d(num_features)
         t = int(abs((math.log(num_features, 2) + b) / gamma))
-        ks = int(num_features/8) if int(num_features/8) % 2 else int(num_features/8) + 1
+        ks = t if t % 2 else t + 1
         
         self.sigmoid = nn.Sigmoid()
-        self.conv0 = nn.Conv2d(1,int(num_features/4),kernel_size=(2,1),bias=False)
-        self.conv1 =  nn.Conv1d(int(num_features/4), 1, kernel_size=ks, padding=ks // 2, bias=False) 
+        self.conv0 = nn.Conv2d(1,ks,kernel_size=(2,1),bias=False)
+        self.conv1 =  nn.Conv1d(ks, 1, kernel_size=ks, padding=(ks-1) // 2, bias=False) 
         self.momentum = momentum
+        self.softmax = nn.Softmax(dim=1)
     def forward(self,x):
         n = x.numel() / (x.size(0))
         if self.training:
             # print("in train")
-            mean = (1-self.momentum)* x.mean(dim=(0, 2, 3))
+            mean = x.mean(dim=(0, 2, 3))
             var = (x-mean[None, :, None, None]).pow(2).mean(dim=(0,2, 3))
 
-            indexvar = torch.sqrt(self.bn.running_var).mean()/math.pow(n,0.5)
-            indexmean = self.bn.running_mean.mean()/math.pow(n,0.5)
+            meanMix = self.softmax(torch.matmul(mean[:,None],self.bn.running_mean[None,:])/math.pow(n,0.5)).squeeze()
 
-            varmix = indexvar * torch.sqrt(self.momentum* var + (1-self.momentum)*self.bn.running_var)
-            meanmix = indexmean * (self.momentum * mean + (1-self.momentum) * self.bn.running_mean)
+            meanMix = torch.matmul(meanMix[None,:],mean[:,None]).squeeze()
 
-            combine = torch.cat((meanmix[None,None,None,:],varmix[None,None,None,:]),2)
+            varMix = self.softmax(torch.matmul(torch.sqrt(var)[:,None],torch.sqrt(self.bn.running_var)[None,:])\
+                                /math.pow(n,0.5)).squeeze()
+            varMix = torch.matmul(varMix[None,:],torch.sqrt(var)[:,None]).squeeze()
+
+            combine = torch.cat((meanMix[None,None,None,:],varMix[None,None,None,:]),2)
+
             combine = F.relu(self.conv0(combine)).squeeze()
-            # print("after conv0:",combine.shape)
-            combine =self.sigmoid(self.conv1(combine[None,:,:]).squeeze())
-            # print("after conv1:",combine.shape)
+
+            
+            combine = self.sigmoid(self.conv1(combine[None,:,:])).squeeze()
 
         else:
-            # print("in test")
             mean = self.bn.running_mean
             var = self.bn.running_var
+            meanMix = self.softmax(torch.matmul(mean[:,None],self.bn.running_mean[None,:])/math.pow(n,0.5)).squeeze()
 
-            indexvar = torch.sqrt(self.bn.running_var).mean()/math.pow(n,0.5)
-            indexmean = self.bn.running_mean.mean()/math.pow(n,0.5)
+            meanMix = torch.matmul(meanMix[None,:],mean[:,None]).squeeze()
 
-            varmix = indexvar * torch.sqrt(var)
-            meanmix = indexmean * mean 
+            varMix = self.softmax(torch.matmul(torch.sqrt(var)[:,None],torch.sqrt(self.bn.running_var)[None,:])\
+                                /math.pow(n,0.5)).squeeze()
+            varMix = torch.matmul(varMix[None,:],torch.sqrt(var)[:,None]).squeeze()
 
-            combine = torch.cat((meanmix[None,None,None,:],varmix[None,None,None,:]),2)
+            combine = torch.cat((meanMix[None,None,None,:],varMix[None,None,None,:]),2)
+
             combine = F.relu(self.conv0(combine)).squeeze()
-            # print("after conv0:",combine.shape)
-            combine =self.sigmoid(self.conv1(combine[None,:,:]).squeeze())
+
+            
+            combine = self.sigmoid(self.conv1(combine[None,:,:])).squeeze()
 
         out = self.bn(x)
         out.mul_(combine[None,:,None,None])
-        return out   
+        return out         
 class EcaLayer(nn.Module):
 
     def __init__(self, channels, gamma=2, b=1):
