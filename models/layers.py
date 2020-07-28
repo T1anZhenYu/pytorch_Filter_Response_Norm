@@ -144,7 +144,7 @@ class NewBN(nn.Module):
     def __init__(self,num_features, eps=1e-05, momentum=0.9, affine=True, gamma=2, b=1):
         super(NewBN,self).__init__()
         self.bn = nn.BatchNorm2d(num_features)
-        t = int(abs((math.log(num_features, 2) + b) / gamma))
+        t = int(num_features/8)
         ks = t if t % 2 else t + 1
         
         self.sigmoid = nn.Sigmoid()
