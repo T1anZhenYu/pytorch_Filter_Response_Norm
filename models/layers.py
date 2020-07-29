@@ -141,10 +141,10 @@ class MixChannel(nn.Module):
         return out
 
 
-class MixChannel(nn.Module):
+class NewBN(nn.Module):
 
     def __init__(self, num_features, eps=1e-05, momentum=0.9, affine=True):
-        super(MixChannel, self).__init__()
+        super(NewBN, self).__init__()
 
         t = int(abs((math.log(num_features, 2) + b) / gamma))
         ks = t if t % 2 else t + 1
