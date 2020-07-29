@@ -146,7 +146,7 @@ class NewBN(nn.Module):
     def __init__(self, num_features, eps=1e-05, momentum=0.9, affine=True):
         super(NewBN, self).__init__()
 
-        t = int(abs((math.log(num_features, 2) + b) / gamma))
+        t = int(num_features/8)
         ks = t if t % 2 else t + 1
         # self.mixvar = nn.Conv2d(1, 1, kernel_size=ks , padding=(ks-1) // 2, bias=False) 
         self.linearvar = nn.Conv1d(1, 1, kernel_size=ks, padding=(ks-1) // 2, bias=False) 
