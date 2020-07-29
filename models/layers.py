@@ -159,7 +159,7 @@ class NewBN(nn.Module):
 
 
     def forward(self, x):
-        n = x.numel() / (x.size(1))
+        n = x.numel() / (x.size(0))
         if self.training:
             
             mean = x.mean(dim=(0, 2, 3))
