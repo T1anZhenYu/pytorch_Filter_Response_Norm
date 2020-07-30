@@ -235,26 +235,6 @@ def convert_layers(model, layer_type_old=nn.BatchNorm2d, layer_type_new=MixChann
 
     return model, conversion_count
 
-def noAffine(model, layer_type_old=nn.BatchNorm2d, **kwargs):
-    conversion_count = 0
-    # print(type(torch.nn.modules.batchnorm.BatchNorm2d))
-    for name, module in reversed(model._modules.items()):
-
-        if len(list(module.children())) > 0:
-            # recurse
-            model._modules[name], num_converted = noAffine(module, \
-            layer_type_old, **kwargs)
-            conversion_count += num_converted
-        # print('name:',name,' module:',module," 1 type:",nn.BatchNorm2d," 2 type",type(module),\
-        # " change?:",type(module) == nn.BatchNorm2d)
-        if type(module) == nn.BatchNorm2d:
-
-            layer_old = module
-            layer_old.affine = False
-
-            conversion_count += 1
-
-    return model, conversion_count
 def main():
     global best_acc
     start_epoch = 0  # start from epoch 0 or last checkpoint epoch
@@ -301,7 +281,6 @@ def main():
         model = models.__dict__[args.arch](num_classes=num_classes)
 
 
-    # noAffine(model)
     print(model)
     model = torch.nn.DataParallel(model).cuda()
     cudnn.benchmark = True

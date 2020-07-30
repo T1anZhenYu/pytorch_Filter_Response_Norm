@@ -1,8 +1,12 @@
+import torch.nn as nn
+import math
+
+from .layers import * 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-__all__ = ['MobileNetV2']
+
 class Block(nn.Module):
     '''expand + depthwise + pointwise'''
     def __init__(self, in_planes, out_planes, expansion, stride):
@@ -70,14 +74,7 @@ class MobileNetV2(nn.Module):
         out = out.view(out.size(0), -1)
         out = self.linear(out)
         return out
+def mobilenet(num_classes):
+    model = MobileNetV2(num_classes=num_classes)
 
-
-def MobileNetV2(num_classes):
-    return MobileNetV2(num_classes)
-def test():
-    net = MobileNetV2()
-    x = torch.randn(2,3,32,32)
-    y = net(x)
-    print(y.size())
-
-# test()
+    return model

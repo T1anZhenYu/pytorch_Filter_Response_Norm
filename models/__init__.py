@@ -10,6 +10,6 @@ from .densnet_mixchannel import *
 from .inception_mixchannel import *
 from .resnetECA import * 
 from .resnetECA_mixchannel import *
-from .densnetECA_mixchannel import * 
+from .densnetECA import * 
 from .mobienetv2 import * 
 from .mobienetv2_mixchannel import * 
