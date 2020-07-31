@@ -14,3 +14,6 @@ from .densnetECA import *
 from .mobienetv2 import * 
 from .mobienetv2_mixchannel import * 
 from .mobienetv2_eca import * 
+
+from .mobienetv2_se import * 
+from .resnetSE import *

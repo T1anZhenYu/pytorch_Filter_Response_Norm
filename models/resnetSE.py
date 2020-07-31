@@ -9,6 +9,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from .layers import * 
 import math
+
+__all__ = ['ResNet18_SE','ResNet34_SE','ResNet50_SE','ResNet101_SE','ResNet152_SE']
 class BasicBlock(nn.Module):
     expansion = 1
 
@@ -28,12 +30,12 @@ class BasicBlock(nn.Module):
                           kernel_size=1, stride=stride, bias=False),
                 nn.BatchNorm2d(self.expansion*planes)
             )
-        self.eca = EcaLayer(planes, k_size=3)
+        self.se = SELayer(planes)
 
     def forward(self, x):
         out = F.relu(self.bn1(self.conv1(x)))
         out = self.bn2(self.conv2(out))
-        out = self.eca(out)
+        out = self.se(out)
         out += self.shortcut(x)
         out = F.relu(out)
         return out
@@ -60,13 +62,13 @@ class Bottleneck(nn.Module):
                           kernel_size=1, stride=stride, bias=False),
                 nn.BatchNorm2d(self.expansion*planes)
             )
-        self.eca = EcaLayer(self.expansion*planes, 3)
+        self.se = SELayer(self.expansion*planes)
 
     def forward(self, x):
         out = F.relu(self.bn1(self.conv1(x)))
         out = F.relu(self.bn2(self.conv2(out)))
         out = self.bn3(self.conv3(out))
-        out = self.eca(out)
+        out = self.se(out)
         out += self.shortcut(x)
         out = F.relu(out)
         return out
@@ -110,23 +112,23 @@ class ResNet(nn.Module):
         return out
 
 
-def ResNet18_ECA(num_classes):
+def ResNet18_SE(num_classes):
     return ResNet(BasicBlock, [2, 2, 2, 2], num_classes)
 
 
-def ResNet34_ECA(num_classes):
+def ResNet34_SE(num_classes):
     return ResNet(BasicBlock, [3, 4, 6, 3], num_classes)
 
 
-def ResNet50_ECA(num_classes):
+def ResNet50_SE(num_classes):
     return ResNet(Bottleneck, [3, 4, 6, 3], num_classes)
 
 
-def ResNet101_ECA(num_classes):
+def ResNet101_SE(num_classes):
     return ResNet(Bottleneck, [3, 4, 23, 3], num_classes)
 
 
-def ResNet152_ECA(num_classes):
+def ResNet152_SE(num_classes):
     return ResNet(Bottleneck, [3, 8, 36, 3], num_classes)
 
 
