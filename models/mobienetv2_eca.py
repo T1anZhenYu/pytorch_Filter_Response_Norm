@@ -2,12 +2,8 @@
 from torch import nn
 from .layers import *
 
-__all__ = ['mobilenet_mixchannel']
+__all__ = ['mobilenet_eca']
 
-
-model_urls = {
-    'mobilenet_v2': 'https://download.pytorch.org/models/mobilenet_v2-b0353104.pth',
-}
 
 
 class ConvBNReLU(nn.Sequential):
@@ -15,7 +11,7 @@ class ConvBNReLU(nn.Sequential):
         padding = (kernel_size - 1) // 2
         super(ConvBNReLU, self).__init__(
             nn.Conv2d(in_planes, out_planes, kernel_size, stride, padding, groups=groups, bias=False),
-            NewBN(out_planes),
+            nn.BatchNorm2d(out_planes),
             nn.ReLU6(inplace=True)
         )
 
@@ -38,9 +34,9 @@ class InvertedResidual(nn.Module):
             ConvBNReLU(hidden_dim, hidden_dim, stride=stride, groups=hidden_dim),
             # pw-linear
             nn.Conv2d(hidden_dim, oup, 1, 1, 0, bias=False),
-            NewBN(oup),
+            nn.BatchNorm2d(oup),
         ])
-        # layers.append(eca_layer(oup, k_size))
+        layers.append(EcaLayer(oup, k_size))
         self.conv = nn.Sequential(*layers)
 
     def forward(self, x):
@@ -114,7 +110,7 @@ class ECA_MobileNetV2(nn.Module):
         return x
 
 
-def mobilenet_mixchannel(pretrained=False, progress=True, **kwargs):
+def mobilenet_eca(pretrained=False, progress=True, **kwargs):
     """
     Constructs a ECA_MobileNetV2 architecture from
     Args:

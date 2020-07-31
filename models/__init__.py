@@ -13,3 +13,4 @@ from .resnetECA_mixchannel import *
 from .densnetECA import * 
 from .mobienetv2 import * 
 from .mobienetv2_mixchannel import * 
+from .mobienetv2_eca import * 
