@@ -1,9 +1,12 @@
-  
 from torch import nn
-from .layers import *
+from .layers import EcaLayer
 
-__all__ = ['mobilenet_eca']
+__all__ = ['eca_mobilenet']
 
+
+model_urls = {
+    'mobilenet_v2': 'https://download.pytorch.org/models/mobilenet_v2-b0353104.pth',
+}
 
 
 class ConvBNReLU(nn.Sequential):
@@ -110,7 +113,7 @@ class ECA_MobileNetV2(nn.Module):
         return x
 
 
-def mobilenet_eca(pretrained=False, progress=True, **kwargs):
+def eca_mobilenet( **kwargs):
     """
     Constructs a ECA_MobileNetV2 architecture from
     Args:
