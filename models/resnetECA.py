@@ -28,7 +28,7 @@ class BasicBlock(nn.Module):
                           kernel_size=1, stride=stride, bias=False),
                 nn.BatchNorm2d(self.expansion*planes)
             )
-        self.eca = EcaLayer(planes, k_size=3)
+        self.eca = EcaLayer(planes)
 
     def forward(self, x):
         out = F.relu(self.bn1(self.conv1(x)))
@@ -60,7 +60,7 @@ class Bottleneck(nn.Module):
                           kernel_size=1, stride=stride, bias=False),
                 nn.BatchNorm2d(self.expansion*planes)
             )
-        self.eca = EcaLayer(self.expansion*planes, 3)
+        self.eca = EcaLayer(self.expansion*planes)
 
     def forward(self, x):
         out = F.relu(self.bn1(self.conv1(x)))
