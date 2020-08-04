@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+from .layers import *
 __all__ = ['mobilenetv2_eca']
 class LinearBottleNeck(nn.Module):
 
