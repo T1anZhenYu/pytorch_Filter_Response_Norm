@@ -8,6 +8,8 @@ from .inception import  *
 from .resnet_mixchannel import *
 from .densnet_mixchannel import * 
 from .inception_mixchannel import *
+from .inception_SE import *
+from .inception_ECA import *
 from .resnetECA import * 
 from .resnetECA_mixchannel import *
 from .densnetECA import * 
