@@ -28,7 +28,7 @@ class BasicBlock(nn.Module):
                           kernel_size=1, stride=stride, bias=False),
                 NewBN(self.expansion*planes)
             )
-        self.eca = EcaLayer(planes, k_size=3)
+        self.eca = SELayer(planes, k_size=3)
 
     def forward(self, x):
         out = F.relu(self.bn1(self.conv1(x)))
@@ -60,7 +60,7 @@ class Bottleneck(nn.Module):
                           kernel_size=1, stride=stride, bias=False),
                 NewBN(self.expansion*planes)
             )
-        self.eca = EcaLayer(self.expansion*planes, 3)
+        self.eca = SELayer(self.expansion*planes, 3)
 
     def forward(self, x):
         out = F.relu(self.bn1(self.conv1(x)))
@@ -110,23 +110,23 @@ class ResNet(nn.Module):
         return out
 
 
-def ResNet18_ECA_MixChannel(num_classes):
+def ResNet18_SE_MixChannel(num_classes):
     return ResNet(BasicBlock, [2, 2, 2, 2], num_classes)
 
 
-def ResNet34_ECA_MixChannel(num_classes):
+def ResNet34_SE_MixChannel(num_classes):
     return ResNet(BasicBlock, [3, 4, 6, 3], num_classes)
 
 
-def ResNet50_ECA_MixChannel(num_classes):
+def ResNet50_SE_MixChannel(num_classes):
     return ResNet(Bottleneck, [3, 4, 6, 3], num_classes)
 
 
-def ResNet101_ECA_MixChannel(num_classes):
+def ResNet101_SE_MixChannel(num_classes):
     return ResNet(Bottleneck, [3, 4, 23, 3], num_classes)
 
 
-def ResNet152_ECA_MixChannel(num_classes):
+def ResNet152_SE_MixChannel(num_classes):
     return ResNet(Bottleneck, [3, 8, 36, 3], num_classes)
 
 
