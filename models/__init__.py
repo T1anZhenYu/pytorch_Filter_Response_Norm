@@ -11,7 +11,7 @@ from .inception_mixchannel import *
 from .inception_SE import *
 from .inception_ECA import *
 from .resnetECA import *
-from .densnetECA import * 
+from .densnetSE import *
 from .mobienetv2 import * 
 from .mobienetv2_mixchannel import * 
 from .mobienetv2_eca import * 
