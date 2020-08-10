@@ -5,7 +5,6 @@ from torch.nn import functional as F
 import numpy as np
 import os
 import math
-import setting
 
 class BatchNormFunction(torch.autograd.Function):
     @staticmethod

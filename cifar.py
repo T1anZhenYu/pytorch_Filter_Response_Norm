@@ -322,10 +322,8 @@ def main():
     # Train and val
     total_param = list( model.named_parameters())
 
-    setting.total_epoch = args.epochs
     for epoch in range(start_epoch, args.epochs):
-        setting.temp_epoch = epoch
-        
+
         print('\nEpoch: [%d | %d] LR: %f' % (epoch + 1, args.epochs, optimizer.param_groups[0]['lr']))
 
         train_loss, train_acc = train(trainloader, model, criterion, optimizer, epoch,

@@ -9,9 +9,9 @@ __all__ = ['DenseNet121_mixchannel',"DenseNet169_mixchannel","DenseNet201_mixcha
 class Bottleneck(nn.Module):
     def __init__(self, in_planes, growth_rate):
         super(Bottleneck, self).__init__()
-        self.bn1 = nn.BatchNorm2d(in_planes)
+        self.bn1 = NewBN(in_planes)
         self.conv1 = nn.Conv2d(in_planes, 4*growth_rate, kernel_size=1, bias=False)
-        self.bn2 = NewBN(4*growth_rate)
+        self.bn2 = nn.BatchNorm2d(4*growth_rate)
         self.conv2 = nn.Conv2d(4*growth_rate, growth_rate, kernel_size=3, padding=1, bias=False)
         self.eca = EcaLayer(growth_rate)
     def forward(self, x):
@@ -26,7 +26,7 @@ class Bottleneck(nn.Module):
 class Transition(nn.Module):
     def __init__(self, in_planes, out_planes):
         super(Transition, self).__init__()
-        self.bn = nn.BatchNorm2d(in_planes)
+        self.bn = NewBN(in_planes)
         self.conv = nn.Conv2d(in_planes, out_planes, kernel_size=1, bias=False)
 
     def forward(self, x):
