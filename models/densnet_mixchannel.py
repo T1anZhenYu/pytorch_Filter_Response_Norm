@@ -5,26 +5,28 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from .layers import *
-__all__ = ['DenseNet121_Mixchannel',"DenseNet169_Mixchannel","DenseNet201_Mixchannel"]
+__all__ = ['DenseNet121_mixchannel',"DenseNet169_mixchannel","DenseNet201_mixchannel"]
 class Bottleneck(nn.Module):
     def __init__(self, in_planes, growth_rate):
         super(Bottleneck, self).__init__()
-        self.bn1 = NewBN(in_planes)
+        self.bn1 = nn.BatchNorm2d(in_planes)
         self.conv1 = nn.Conv2d(in_planes, 4*growth_rate, kernel_size=1, bias=False)
         self.bn2 = NewBN(4*growth_rate)
         self.conv2 = nn.Conv2d(4*growth_rate, growth_rate, kernel_size=3, padding=1, bias=False)
-
+        self.eca = EcaLayer(growth_rate)
     def forward(self, x):
         out = self.conv1(F.relu(self.bn1(x)))
         out = self.conv2(F.relu(self.bn2(out)))
+        # out = self.eca(out)
         out = torch.cat([out,x], 1)
+
         return out
 
 
 class Transition(nn.Module):
     def __init__(self, in_planes, out_planes):
         super(Transition, self).__init__()
-        self.bn = NewBN(in_planes)
+        self.bn = nn.BatchNorm2d(in_planes)
         self.conv = nn.Conv2d(in_planes, out_planes, kernel_size=1, bias=False)
 
     def forward(self, x):
@@ -62,7 +64,7 @@ class DenseNet(nn.Module):
         self.dense4 = self._make_dense_layers(block, num_planes, nblocks[3])
         num_planes += nblocks[3]*growth_rate
 
-        self.bn = NewBN(num_planes)
+        self.bn = nn.BatchNorm2d(num_planes)
         self.linear = nn.Linear(num_planes, num_classes)
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -87,22 +89,22 @@ class DenseNet(nn.Module):
         out = self.linear(out)
         return out
 
-def DenseNet121_Mixchannel(**kwargs):
+def DenseNet121_mixchannel(**kwargs):
     if "num_classes" in kwargs:
         num_classes = kwargs["num_classes"]
     return DenseNet(Bottleneck, [6,12,24,16], growth_rate=32,num_classes=num_classes)
 
-def DenseNet169_Mixchannel(**kwargs):
+def DenseNet169_mixchannel(**kwargs):
     if "num_classes" in kwargs:
         num_classes = kwargs["num_classes"]
     return DenseNet(Bottleneck, [6,12,32,32], growth_rate=32,num_classes=num_classes)
 
-def DenseNet201_Mixchannel(**kwargs):
+def DenseNet201_mixchannel(**kwargs):
     if "num_classes" in kwargs:
         num_classes = kwargs["num_classes"]
     return DenseNet(Bottleneck, [6,12,48,32], growth_rate=32,num_classes=num_classes)
 
-def DenseNet161_Mixchannel(**kwargs):
+def DenseNet161_mixchannel(**kwargs):
     if "num_classes" in kwargs:
         num_classes = kwargs["num_classes"]
     return DenseNet(Bottleneck, [6,12,36,24], growth_rate=48,num_classes=num_classes)

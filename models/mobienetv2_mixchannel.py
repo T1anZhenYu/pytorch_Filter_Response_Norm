@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .layers import * 
-__all__ = ['mobilenet_mixchannel']
+from .layers import *
+__all__ = ['mobilenetv2_mixchannel']
 class LinearBottleNeck(nn.Module):
 
     def __init__(self, in_channels, out_channels, stride, t=6, num_classes=100):
@@ -10,25 +10,26 @@ class LinearBottleNeck(nn.Module):
 
         self.residual = nn.Sequential(
             nn.Conv2d(in_channels, in_channels * t, 1),
-            NewBN(in_channels * t),
+            nn.BatchNorm2d(in_channels * t),
             nn.ReLU6(inplace=True),
 
             nn.Conv2d(in_channels * t, in_channels * t, 3, stride=stride, padding=1, groups=in_channels * t),
-            NewBN(in_channels * t),
+            nn.BatchNorm2d(in_channels * t),
             nn.ReLU6(inplace=True),
 
             nn.Conv2d(in_channels * t, out_channels, 1),
             NewBN(out_channels)
         )
-
+        self.eca = SELayer(out_channels)
         self.stride = stride
         self.in_channels = in_channels
         self.out_channels = out_channels
 
+
     def forward(self, x):
 
         residual = self.residual(x)
-
+        # residual = self.eca(residual)
         if self.stride == 1 and self.in_channels == self.out_channels:
             residual += x
 
@@ -41,7 +42,7 @@ class MobileNetV2(nn.Module):
 
         self.pre = nn.Sequential(
             nn.Conv2d(3, 32, 1, padding=1),
-            NewBN(32),
+            nn.BatchNorm2d(32),
             nn.ReLU6(inplace=True)
         )
 
@@ -55,7 +56,7 @@ class MobileNetV2(nn.Module):
 
         self.conv1 = nn.Sequential(
             nn.Conv2d(320, 1280, 1),
-            NewBN(1280),
+            nn.BatchNorm2d(1280),
             nn.ReLU6(inplace=True)
         )
 
@@ -88,5 +89,5 @@ class MobileNetV2(nn.Module):
 
         return nn.Sequential(*layers)
 
-def mobilenet_mixchannel(**kwargs):
+def mobilenetv2_mixchannel(**kwargs):
     return MobileNetV2(**kwargs)
