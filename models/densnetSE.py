@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from .layers import *
-__all__ = ['DenseNet121ECA',"DenseNet169ECA","DenseNet201ECA"]
+__all__ = ['DenseNet121SE',"DenseNet169SE","DenseNet201SE"]
 class Bottleneck(nn.Module):
     def __init__(self, in_planes, growth_rate):
         super(Bottleneck, self).__init__()
@@ -92,22 +92,22 @@ class DenseNet(nn.Module):
         out = self.linear(out)
         return out
 
-def DenseNet121ECA(**kwargs):
+def DenseNet121SE(**kwargs):
     if "num_classes" in kwargs:
         num_classes = kwargs["num_classes"]
     return DenseNet(Bottleneck, [6,12,24,16], growth_rate=32,num_classes=num_classes)
 
-def DenseNet169ECA(**kwargs):
+def DenseNet169SE(**kwargs):
     if "num_classes" in kwargs:
         num_classes = kwargs["num_classes"]
     return DenseNet(Bottleneck, [6,12,32,32], growth_rate=32,num_classes=num_classes)
 
-def DenseNet201ECA(**kwargs):
+def DenseNet201SE(**kwargs):
     if "num_classes" in kwargs:
         num_classes = kwargs["num_classes"]
     return DenseNet(Bottleneck, [6,12,48,32], growth_rate=32,num_classes=num_classes)
 
-def DenseNet161ECA(**kwargs):
+def DenseNet161SE(**kwargs):
     if "num_classes" in kwargs:
         num_classes = kwargs["num_classes"]
     return DenseNet(Bottleneck, [6,12,36,24], growth_rate=48,num_classes=num_classes)
