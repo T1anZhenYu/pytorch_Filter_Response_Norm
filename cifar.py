@@ -47,8 +47,6 @@ parser.add_argument('--drop', '--dropout', default=0, type=float,
                     metavar='Dropout', help='Dropout ratio')
 parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
                     help='momentum')
-parser.add_argument('--standard_bn', action='store_true', help='use standard bn')
-parser.add_argument('--varlearn_initvalue', '-b', default=10, type=int)
 parser.add_argument('--weight-decay', '--wd', default=5e-4, type=float,
                     metavar='W', help='weight decay (default: 1e-4)')
 # Checkpoints
@@ -120,15 +118,9 @@ def train(trainloader, model, criterion, optimizer, epoch, use_cuda):
             inputs, targets = inputs.cuda(), targets.cuda()
         inputs, targets = torch.autograd.Variable(inputs), torch.autograd.Variable(targets)
 
-        # compute output
-        if args.arch.endswith('inceptionv3'):
-            outputs = model(inputs)
-            loss0 = criterion(outputs,targets)
-            # loss1 = criterion(outputs1,targets)
-            loss = loss0
-        else:
-            outputs = model(inputs)
-            loss = criterion(outputs, targets)
+
+        outputs = model(inputs)
+        loss = criterion(outputs, targets)
 
         # measure accuracy and record loss
         prec1, prec5 = accuracy(outputs.data, targets.data, topk=(1, 5))

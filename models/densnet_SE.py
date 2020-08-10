@@ -13,7 +13,7 @@ class Bottleneck(nn.Module):
         self.conv1 = nn.Conv2d(in_planes, 4*growth_rate, kernel_size=1, bias=False)
         self.bn2 = nn.BatchNorm2d(4*growth_rate)
         self.conv2 = nn.Conv2d(4*growth_rate, growth_rate, kernel_size=3, padding=1, bias=False)
-        self.se = SELayer(growth_rate)
+        self.se = SELayer(in_planes)
     def forward(self, x):
         out = self.se(x)
         out = self.conv1(F.relu(self.bn1(out)))
